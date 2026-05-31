@@ -1,0 +1,38 @@
+# prime-rl trainer config — OLMoE-1B-7B, LoRA, GRPO, FSDP2 on 2 L40S (D_T, all 3 configs).
+# TEMPLATE: field names inferred from prime-rl docs/examples — reconcile against
+# code/forks/prime-rl/examples/* on the cluster before first run.
+
+[model]
+name = "allenai/OLMoE-1B-7B-0924-Instruct"
+
+[lora]
+enabled = true
+rank = 32
+alpha = 64
+
+[algo]            # GRPO
+name = "grpo"
+group_size = 8    # G rollouts per prompt
+batch_size = 32   # prompts per train step  (→ 256 episodes/step at G=8)
+
+[fsdp2]
+enabled = true
+# train pool = 2 L40S; pin via CUDA_VISIBLE_DEVICES in the launch wrapper
+
+[expert_parallelism]
+enabled = true    # exercise the EP code path even on the small model
+
+[optimizer]
+type = "adamw"
+lr = 1e-5
+warmup_steps = 10
+
+[checkpointing]
+enabled = true
+interval = 20     # steps; preemption-safe resume
+async_save = true
+
+[telemetry]       # our additions (fork edit reads these)
+run_dir = ""      # set by run-config.sbatch
+emit_broadcast_split = true   # Q4
+emit_step_timing = true       # Q3 C_T

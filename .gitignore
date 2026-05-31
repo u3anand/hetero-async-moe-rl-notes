@@ -8,3 +8,16 @@
 
 # Cluster-specific notes kept local (SSH login, other groups' allocations)
 WatGPU.md
+
+# Code build/run artifacts (big things live on WatGPU at /u3/u3anand/b1)
+__pycache__/
+*.egg-info/
+*.pyc
+.venv/
+code/b1/runs/
+code/b1/models/
+code/b1/data/
+code/b1/**/*.jsonl
+**/.udocker/
+*-*.out
+*-*.err

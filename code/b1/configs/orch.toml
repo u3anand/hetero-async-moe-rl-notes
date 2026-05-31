@@ -1,0 +1,17 @@
+# prime-rl orchestrator config — async multi-replica rollout over the SWE env.
+# TEMPLATE: reconcile field names against prime-rl examples + the mini-swe-agent-plus env.
+
+[environment]
+name = "mini-swe-agent"     # verifiers env; route tool exec → UdockerEnvironment (fork edit)
+[environment.args]
+dataset = "nebius/SWE-rebench-openhands-trajectories"
+executor = "udocker"        # our UdockerEnvironment
+images_list = "sandbox/images.txt"
+
+[rollout]
+rollout_batch_size = 256    # episodes per train batch (32 prompts × G=8)
+max_async_level = 2         # bounded staleness η (inference may be k steps ahead)
+
+[telemetry]                 # our additions (fork edit reads these)
+emit_episode = true         # Q1/Q5/Q6 tags: per-episode + policy_version + replica_id
+emit_queue_depth = true     # Q2

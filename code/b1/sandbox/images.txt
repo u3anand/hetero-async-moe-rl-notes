@@ -1,0 +1,5 @@
+# SWE-bench udocker images to prewarm (Q1/Q5 sandbox spike + the reward path).
+# One ghcr.io/epoch-research/swe-bench.eval.x86_64.<repo>__<id> ref per line.
+# Pick ~15 spanning small→large repos for tail coverage. Fill from the SWE-rebench repo set.
+# e.g.:
+# ghcr.io/epoch-research/swe-bench.eval.x86_64.astropy_1776_astropy-12907

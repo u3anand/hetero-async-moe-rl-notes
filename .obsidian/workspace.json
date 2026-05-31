@@ -11,10 +11,14 @@
             "id": "3f798ea3ecf1c079",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "Research Plan.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "Research Plan"
             }
           }
         ]
@@ -181,15 +185,27 @@
   },
   "active": "3f798ea3ecf1c079",
   "lastOpenFiles": [
+    "code/b1/sandbox/images.txt",
+    "code/b1/sandbox/images.txt.tmp.49938.e7d6f4e8a469",
+    "code/b1/pins.txt",
+    "code/b1/configs/infer-hetero.toml",
+    "code/b1/configs/infer-slow.toml",
+    "code/b1/configs/infer-fast.toml",
+    "code/b1/configs/orch.toml",
+    "code/b1/configs/train.toml",
+    "code/b1/configs",
+    "code/b1/sandbox/prewarm.sh",
+    "code/b1/sandbox/run_test.sh",
+    "Initial Plan.md",
+    "Research Plan.md",
+    "code/b1/README.md",
+    "README.md",
+    "B1 — OLMoE Bring-up.md",
     "MoE vs Dense Workload.md",
     "Paper Direction - v2.md",
-    "Research Plan.md",
-    "B1 — OLMoE Bring-up.md",
     "WatGPU.md",
     "Transformer.md",
-    "WatGPU.md.tmp.49938.c54b916f345a",
     "Paper Direction.md",
-    "README.md",
     "Papers/AReaL-Hex.md",
     "Papers/R3.md",
     "Deep Dives/MoE Load Balancing.md",
@@ -201,22 +217,10 @@
     "Training.md",
     "Inference.md",
     "Papers/Index.md",
-    "Papers/PDFs/moe-inference-systems/2505.16056__not-all-models-suit-expert-offloading.pdf",
-    "Papers/PDFs/swe-rl-workloads/2506.11425__agent-rlvr.pdf",
-    "Papers/PDFs/swe-rl-workloads/2502.18449__swe-rl.pdf",
-    "Papers/PDFs/swe-rl-workloads/2506.11442__reveal-self-evolving-code-agents.pdf",
-    "Papers/PDFs/swe-rl-workloads/2512.18552__self-play-swe-rl.pdf",
-    "Papers/PDFs/rl-systems/2512.22560__rollart.pdf",
-    "Papers/PDFs/rl-systems/2512.07710__each-prompt-matters.pdf",
-    "Papers/PDFs/rl-systems/2511.00796__areal-hex.pdf",
-    "Papers/PDFs/rl-systems/2505.24298__areal.pdf",
     "Papers/Agent-RLVR.md",
     "Papers/Not All Models Suit Expert Offloading.md",
     "MoE Architecture.md",
     "Papers/SWE-RL.md",
-    "Papers/TaiChi.md",
-    "Papers/Tutel.md",
-    "Papers/vLLM PagedAttention.md",
     "Untitled.canvas"
   ]
 }

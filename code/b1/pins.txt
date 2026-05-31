@@ -1,0 +1,9 @@
+# Lockfile — the tested (fork, commit) triple + udocker. setup.sh reads this; submodules
+# under code/forks/ are pinned to these commits. Update when you rebase a fork.
+# Format: <name> <fork-remote> <commit|branch>
+#
+# Filled when the forks are created (see "Fork repos + add submodules").
+prime-rl        git@github.com:u3anand/prime-rl.git         618de8a51110b906980c24d1589a376f725c5d9e   # fork point; branch b1-instrumentation off this
+vllm            git@github.com:u3anand/vllm.git             6bdabbad5bce747865fd3a249658518a4269cc22   # placeholder — re-pin to the vLLM version prime-rl uses (check on cluster)
+mini-swe-agent  git@github.com:u3anand/mini-swe-agent.git   adfe20233d456104c38c3129161b54f0fd39f2c7
+udocker         pip:udocker                                  TBD   # record `udocker --version` after setup.sh

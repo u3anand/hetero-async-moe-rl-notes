@@ -1,0 +1,18 @@
+# Inference (rollout) config — hetero (50/50): 1 Ada + 1 A6000 replica.
+# The replica that exercises the cross-tier router drift (Q6). See infer-fast.toml caveat.
+
+model = "allenai/OLMoE-1B-7B-0924-Instruct"
+dtype = "bfloat16"
+tensor_parallel_size = 1
+gpu_memory_utilization = 0.6
+
+[[replicas]]
+tier = "fast"
+cuda_visible_devices = "6"   # RTX 6000 Ada
+[[replicas]]
+tier = "slow"
+cuda_visible_devices = "4"   # RTX A6000
+
+[telemetry]
+emit_router_logits = true
+router_logit_sample_rate = 0.1

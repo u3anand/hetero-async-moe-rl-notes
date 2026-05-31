@@ -1,0 +1,22 @@
+# Inference (rollout) config — homo-fast (100/0): 2 Ada replicas.
+# OLMoE fits one card → 1 GPU/replica, BF16, no TP/FP8 this phase.
+# TEMPLATE: per-replica GPU pinning convention — verify how prime-rl wants it expressed
+# (CUDA_VISIBLE_DEVICES per inference server vs a gpu_ids field). See plan risk (a).
+
+model = "allenai/OLMoE-1B-7B-0924-Instruct"
+dtype = "bfloat16"
+tensor_parallel_size = 1
+gpu_memory_utilization = 0.6
+enforce_eager = false
+
+# 2 rollout replicas on the Ada tier (2× RTX 6000 Ada). Indices verified per alloc.
+[[replicas]]
+tier = "fast"
+cuda_visible_devices = "6"   # RTX 6000 Ada (verify with nvidia-smi -L)
+[[replicas]]
+tier = "fast"
+cuda_visible_devices = "7"   # RTX 6000 Ada
+
+[telemetry]
+emit_router_logits = true    # Q6 (vLLM fork hook); subset-sample to bound overhead
+router_logit_sample_rate = 0.1

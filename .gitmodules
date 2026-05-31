@@ -1,0 +1,9 @@
+[submodule "code/forks/prime-rl"]
+	path = code/forks/prime-rl
+	url = git@github.com:u3anand/prime-rl.git
+[submodule "code/forks/vllm"]
+	path = code/forks/vllm
+	url = git@github.com:u3anand/vllm.git
+[submodule "code/forks/mini-swe-agent"]
+	path = code/forks/mini-swe-agent
+	url = git@github.com:u3anand/mini-swe-agent.git

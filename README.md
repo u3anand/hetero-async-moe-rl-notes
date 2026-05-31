@@ -13,7 +13,7 @@ Start with **[Research Plan](Research%20Plan.md)** — the consolidated plan:
 3. Main idea going forward (hetero-aware MILP scheduler + 3 composable mechanisms + 1 conditional)
 4. How we'll use WatGPU (the initial phase)
 
-Then **[B1 — OLMoE Bring-up](B1%20%E2%80%94%20OLMoE%20Bring-up.md)** is the step-by-step plan for the initial phase, and **[WatGPU](WatGPU.md)** documents the cluster.
+Then **[Initial Plan](Initial%20Plan.md)** is the step-by-step plan for the initial phase, and **[WatGPU](WatGPU.md)** documents the cluster.
 
 ## Working thesis
 
@@ -22,7 +22,7 @@ Then **[B1 — OLMoE Bring-up](B1%20%E2%80%94%20OLMoE%20Bring-up.md)** is the st
 ## Layout
 
 - `Research Plan.md` — canonical plan
-- `B1 — OLMoE Bring-up.md` — initial-phase execution plan
+- `Initial Plan.md` — initial-phase execution plan
 - `WatGPU.md` — cluster capability + constraints
 - `Papers/` — per-paper notes + linked PDFs
 - `Deep Dives/` — longer-form topic notes

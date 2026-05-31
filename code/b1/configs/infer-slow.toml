@@ -1,0 +1,18 @@
+# Inference (rollout) config — homo-slow (0/100): 2 A6000 replicas (Ampere, BF16-only).
+# Same as infer-fast but pinned to the slow tier. See infer-fast.toml for the pinning caveat.
+
+model = "allenai/OLMoE-1B-7B-0924-Instruct"
+dtype = "bfloat16"           # A6000 is sm_86 → no FP8 regardless
+tensor_parallel_size = 1
+gpu_memory_utilization = 0.6
+
+[[replicas]]
+tier = "slow"
+cuda_visible_devices = "4"   # RTX A6000 (verify with nvidia-smi -L)
+[[replicas]]
+tier = "slow"
+cuda_visible_devices = "5"   # RTX A6000
+
+[telemetry]
+emit_router_logits = true
+router_logit_sample_rate = 0.1

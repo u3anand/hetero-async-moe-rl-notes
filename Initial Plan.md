@@ -45,6 +45,42 @@ Controlled comparison: **train held constant; rollout replica *count* held const
 
 **6 — Instrumentation + comparison charts** (Q1–Q7 → JSONL → charts): hook each question (Q1 categorize+time bash cmds; Q2 GPU busy% + sandbox queue depth; Q3 C_I vs C_T; Q4 router-vs-expert broadcast bytes/time; Q5 per-episode wallclock CDF; Q6 cross-replica router-KL via per-token logits+version+replica_id; Q7 MFU + HBM-bw). Charts plot **homo-fast vs homo-slow vs hetero side by side**. **Gate:** every hook emits; all charts render across the 3 configs. *Note: under LoRA the Q4 broadcast is just adapter deltas → Q4 is a smoke-test here (real Q4 needs the 30B/full-FT phase). Q6 fallback: subset-sample logits or recompute trainer-side.*
 
+## Instrumentation
+
+Everything reduces to **three append-only JSONL streams** in `runs/<config>/<ts>/telemetry/`, joined on `episode_id / step_id / replica_id` and one monotonic clock (GPU phases timed with CUDA events). **Raw JSONL is the single source of truth; every chart is derived offline** — we never bake a metric prematurely.
+
+**1. `episode.jsonl`** — one record per episode (prime-rl orchestrator + the udocker env):
+```
+episode_id, replica_id, tier, policy_version_start, t_start, t_end,
+num_turns, num_tokens, reward, staleness_at_consume,
+tool_calls[] = { category, t_start, t_end, dur_s, cores, in_udocker }
+```
+**2. `step.jsonl`** — one record per train update (trainer/orchestrator):
+```
+step_id, t_train, broadcast{router_bytes,router_s,expert_bytes,expert_s},
+ep_a2a_bytes, ep_a2a_s, tokens, useful_tokens, batch_staleness[]
+```
+**3. `system.jsonl`** — ~1 Hz sidecar sampler:
+```
+per-GPU sm_active%, dram_active% (HBM bw); sandbox_queue_depth, n_active_sandboxes, cpu_util
+```
+
+| Q | Hook (component) | Raw fields | Derived metric → chart |
+|---|---|---|---|
+| Q1 | mini-swe-agent udocker env: time+classify each bash cmd {file_op/git/mid_test/build/reward_eval} + tag inference-decode time | `tool_calls[].category,dur_s` | seconds-by-category → stacked bar |
+| Q2 | sampler (GPU `sm_active%`) + orchestrator (queue depth, cpu) | `system.jsonl` | GPU busy% vs queue depth → dual-axis; **M4 trigger** |
+| Q3 | trainer phase timer (`t_train`=C_T) + rollout busy split into `C_infer` / `C_tool` | step + episode logs | `C_I/C_T` ratio + the `C_infer`/`C_tool` split → bar/config |
+| Q4 | prime-rl weight-sync: partition tensors router-vs-expert, CUDA-event time each NCCL group | `broadcast{...}` | broadcast %, router vs expert → stacked bar |
+| Q5 | episode log `t_end−t_start` (free from Q1) | `episode.jsonl` | wallclock CDF p50/p95/p99 |
+| Q6 | vLLM MoE hook: per-token router logits + `layer_id, router_version, replica_id` at rollout; trainer recomputes its router dist → KL | router-logit stream | KL vs tier-speed gap → series/scatter |
+| Q7 | trainer FLOPs/peak (MFU) + sampler `dram_active%` | step + system | MFU + HBM-bw per tier → bar |
+
+Reported **p50/p95/p99 over the steady-state window**, as a surface across configs (homo-fast/slow/hetero now; tier-mix/EP/cluster-size later) — never single means. **Caveats:** under LoRA Q4 broadcast is adapter-only → smoke-test (real Q4 needs 30B/full-FT); Q6 router-logit tap costs ~1–5% throughput → subset-sample tokens/layers or recompute trainer-side.
+
+## Code & repo
+
+Our own code (telemetry lib, sampler, charts, configs, slurm, sandbox helpers, `setup.sh`) lives in **`code/b1/`** in the notes repo. The three upstreams are **forked and owned** — `u3anand/{prime-rl, vllm, mini-swe-agent}` — added as **git submodules** under `code/forks/`, with **`pins.txt`** recording the tested commit triple (one `clone --recurse-submodules` reproduces the working set). The fork edits: prime-rl (C_T + broadcast-split + queue/staleness emits, env→udocker wiring), vLLM (one kernel-free Python hook at the MoE gate for Q6 router logits — install `VLLM_USE_PRECOMPILED=1`), mini-swe-agent (`UdockerEnvironment` + tool timing). Big artifacts (models, dataset, runs, telemetry JSONL, `.udocker`) stay on WatGPU at `/u3/u3anand/b1`, gitignored. Full engineering plan: the approved plan file.
+
 ## Definition of done
 On watgpu308, the OLMoE-1B-7B async GRPO loop runs to a steady-state window under **all three configs** with **real udocker test-suite rewards**, **survives a preemption/requeue**, and emits Q1–Q7 telemetry that renders to **side-by-side comparison charts**. The fast:slow throughput gap and where hetero lands between the homogeneous baselines are quantified on the small model. Anchor numbers (turns/episode, inference/turn, bimodal bash latency, mid-episode test count, episode CDF) recorded. This proves the harness; the Qwen3-30B-A3B phase reuses it unchanged.
 
