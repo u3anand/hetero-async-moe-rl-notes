@@ -28,8 +28,3 @@ Then **[B1 — OLMoE Bring-up](B1%20%E2%80%94%20OLMoE%20Bring-up.md)** is the st
 - `Deep Dives/` — longer-form topic notes
 - Top-level concept notes (`MoE Architecture.md`, `MoE vs Dense Workload.md`, `Training.md`, `Inference.md`, `Transformer.md`)
 
-## Status
-
-Pre-experiments. Plan written, scoping not yet begun.
-
-Target venue: MLSys or EuroSys '27.
