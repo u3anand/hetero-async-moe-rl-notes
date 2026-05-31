@@ -6,15 +6,14 @@ This is an Obsidian vault. Open the directory in Obsidian to traverse the link g
 
 ## Canonical doc
 
-Start with **[Paper Direction - v2](Paper%20Direction%20-%20v2.md)** — the consolidated plan. Covers:
+Start with **[Research Plan](Research%20Plan.md)** — the consolidated plan:
 
-1. Workload (Qwen3-30B-A3B + mini-swe-agent + GRPO + R3 on prime-rl)
-2. Benchmark stage (6 characterization questions + sweep dimensions)
-3. RL problem walkthrough
-4. Scheduling problem and solution (static MILP + dynamic runtime controllers, 3 mechanisms + 1 conditional)
-5. Resource planning (AWS-first, cheap GPU pair recommendation, budget estimate)
+1. Motivation (why MoE × async × multi-replica × hetero × agentic is an open cell)
+2. B1 — characterize first (six questions / six charts) and why
+3. Main idea going forward (hetero-aware MILP scheduler + 3 composable mechanisms + 1 conditional)
+4. How we'll use WatGPU (the initial phase)
 
-Older revisions ([Paper Direction.md](Paper%20Direction.md) and [Plan Logic Check.md](Plan%20Logic%20Check.md)) are kept as history but superseded by v2.
+Then **[B1 — OLMoE Bring-up](B1%20%E2%80%94%20OLMoE%20Bring-up.md)** is the step-by-step plan for the initial phase, and **[WatGPU](WatGPU.md)** documents the cluster.
 
 ## Working thesis
 
@@ -22,7 +21,9 @@ Older revisions ([Paper Direction.md](Paper%20Direction.md) and [Plan Logic Chec
 
 ## Layout
 
-- `Paper Direction - v2.md` — canonical plan
+- `Research Plan.md` — canonical plan
+- `B1 — OLMoE Bring-up.md` — initial-phase execution plan
+- `WatGPU.md` — cluster capability + constraints
 - `Papers/` — per-paper notes + linked PDFs
 - `Deep Dives/` — longer-form topic notes
 - Top-level concept notes (`MoE Architecture.md`, `MoE vs Dense Workload.md`, `Training.md`, `Inference.md`, `Transformer.md`)

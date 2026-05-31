@@ -16,7 +16,7 @@ aliases:
 
 [Source](https://arxiv.org/abs/2605.08639)
 
-**Why this is a blocker:** closest adjacency to [[Paper Direction|the proposed direction]]. Need to confirm whether "hierarchical network bandwidth" in the abstract means homogeneous-with-NUMA or actually multi-tier hetero. If the latter, the asymmetric-expert-staleness wedge shrinks.
+**Why this is a blocker:** closest adjacency to [[Research Plan|the proposed direction]]. Need to confirm whether "hierarchical network bandwidth" in the abstract means homogeneous-with-NUMA or actually multi-tier hetero. If the latter, the asymmetric-expert-staleness wedge shrinks.
 
 ## What the abstract says
 
@@ -41,7 +41,7 @@ Pending full-paper read.
 - Bottleneck: hot-expert load imbalance with high temporal variance.
 - Scheduling / placement: inter-batch expert reordering, intra-batch expert replication.
 - Communication: hierarchical bandwidth-matched ops.
-- Heterogeneous cluster angle: **TBD — gating question for [[Paper Direction]].**
+- Heterogeneous cluster angle: **TBD — gating question for [[Research Plan]].**
 - Relevance to MoE RL / SWE-RL: directly adjacent.
 
 ## Key Claims
@@ -51,6 +51,6 @@ _TODO after full read_
 _TODO_
 
 ## Links
-- [[Paper Direction]]
+- [[Research Plan]]
 - [[Papers/R3|R3]]
 - [[Deep Dives/MoE Load Balancing|MoE Load Balancing]]

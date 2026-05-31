@@ -5,3 +5,6 @@
 *.swo
 .idea/
 .vscode/
+
+# Cluster-specific notes kept local (SSH login, other groups' allocations)
+WatGPU.md

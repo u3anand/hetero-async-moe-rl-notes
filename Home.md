@@ -2,7 +2,7 @@
 
 Notes for figuring out a paper direction around **RL training for MoE models on heterogeneous GPU clusters**, with SWE-RL as the target workload.
 
-→ **Current commitment:** [[Paper Direction]] — asymmetric expert staleness in async hetero MoE RL.
+→ **Current plan:** [[Research Plan]] — throughput-optimal async MoE RL on heterogeneous GPU clusters for agentic workloads.
 
 Meta-context (research direction, papers being read, related-work catalog) lives in the agent's memory, not in this vault. The vault is for technical knowledge that accrues as I read.
 

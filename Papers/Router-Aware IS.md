@@ -26,7 +26,7 @@ Uses router logits to rescale IS weights so the IS correction reflects routing d
 ## Why it matters here
 
 - Confirms standard per-token IS is insufficient for MoE off-policy.
-- Adjacent to (but distinct from) the cross-replica IS correction proposed in [[Paper Direction]] mechanism (2).
+- Adjacent to (but distinct from) the cross-replica IS correction proposed in [[Research Plan]] mechanism M3.
 
 ## What it does NOT address
 
@@ -41,5 +41,5 @@ Uses router logits to rescale IS weights so the IS correction reflects routing d
 - Heterogeneous cluster angle: none.
 
 ## Links
-- [[Paper Direction]]
+- [[Research Plan]]
 - [[Papers/R3|R3]]

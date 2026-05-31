@@ -17,7 +17,7 @@ Lookup surface for downloaded paper PDFs and scaffold notes.
 
 - [[Papers/R3|R3]] — 2025 — arxiv:2510.11370 — unread — within-replica router replay
 - [[Papers/Router-Aware IS|Router-Aware IS]] — 2025 — arxiv:2510.23027 — unread — router-logit-rescaled IS
-- [[Papers/ReLibra|ReLibra]] — 2026 — arxiv:2605.08639 — unread — **blocker for [[Paper Direction]]**
+- [[Papers/ReLibra|ReLibra]] — 2026 — arxiv:2605.08639 — unread — **blocker for [[Research Plan]]**
 
 ## SWE-RL Workloads
 
