@@ -1,0 +1,26 @@
+# B1 Tier-1 smoke config — trainer-only, fake data, OLMoE-1B-7B on watgpu308 (Ada/L40S).
+# Goal: prove our step-stream telemetry + the torch CUDA trace come out on real hardware.
+# Run with: uv run trainer @ code/b1/configs/smoke-train.toml --output-dir <RUN> --trace-path <RUN>/trace
+# Verify field names first: `... --dry-run --output-dir /tmp/x` then read /tmp/x/configs.
+# Field names reconciled against prime-rl's real schema (packages/prime-rl-configs .../trainer.py);
+# our other code/b1/configs/*.toml are still TEMPLATES (wrong field names) — reconcile at Tier 2.
+
+max_steps = 5   # must be set and <10 when trace_path is on (dont_do_massive_traces validator)
+
+[model]
+name = "allenai/OLMoE-1B-7B-0924-Instruct"
+impl = "hf"                 # OLMoE has no custom trainer impl in this fork → hf (so ep must stay 1)
+attn = "sdpa"               # avoid the flash-attn wheel for the first smoke (default is flash_attention_2)
+moe_use_grouped_mm = false  # REQUIRED — grouped_mm needs SM>=9.0; watgpu308 has none (L40S/A6000/Ada)
+seq_len = 1024
+
+[model.debug]
+# Round-robin routing for fake data — untrained routing would OOM under severe imbalance.
+force_balanced_routing = true
+
+[data.fake]
+batch_size = 2              # random micro-batches; no orchestrator / inference / udocker needed
+
+[telemetry]                 # TrainerTelemetryConfig — these field names are correct (our fork edit)
+emit_step_timing = true     # Q3: per-step t_train → step.jsonl
+emit_broadcast_split = true # Q4: only fires if a weight broadcast runs; trainer-only → likely absent (expected)
