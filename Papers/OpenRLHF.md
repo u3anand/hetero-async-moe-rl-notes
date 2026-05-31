@@ -14,7 +14,7 @@ aliases:
 
 # OpenRLHF
 
-[PDF](PDFs/rl-systems/2405.11143__openrlhf.pdf) · [Source](https://arxiv.org/pdf/2405.11143.pdf)
+[PDF](2405.11143__openrlhf.pdf) · [Source](https://arxiv.org/pdf/2405.11143.pdf)
 
 ## Why This Paper Matters
 _TODO_

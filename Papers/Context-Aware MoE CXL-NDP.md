@@ -15,7 +15,7 @@ aliases:
 
 # Context-Aware MoE CXL-NDP
 
-[PDF](PDFs/moe-inference-systems/2512.04476__context-aware-moe-cxl-ndp.pdf) · [Source](https://arxiv.org/pdf/2512.04476.pdf)
+[PDF](2512.04476__context-aware-moe-cxl-ndp.pdf) · [Source](https://arxiv.org/pdf/2512.04476.pdf)
 
 ## Why This Paper Matters
 _TODO_
@@ -35,5 +35,5 @@ _TODO_
 _TODO_
 
 ## Links
-- [[Deep Dives/MoE Inference Systems]]
+- [[MoE Inference Systems]]
 - [[Inference]]

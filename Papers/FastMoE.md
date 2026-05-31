@@ -14,7 +14,7 @@ aliases:
 
 # FastMoE
 
-[PDF](PDFs/moe-training-systems/2103.13262__fastmoe.pdf) · [Source](https://arxiv.org/pdf/2103.13262.pdf)
+[PDF](2103.13262__fastmoe.pdf) · [Source](https://arxiv.org/pdf/2103.13262.pdf)
 
 ## Why This Paper Matters
 _TODO_
@@ -34,5 +34,5 @@ _TODO_
 _TODO_
 
 ## Links
-- [[Deep Dives/MoE Training Systems]]
+- [[MoE Training Systems]]
 - [[MoE vs Dense Workload]]

@@ -20,7 +20,7 @@ x → router (Linear → top-k softmax)
 - **Fine-grained experts** — many small experts (64–256) over few big ones. Better specialization, harder routing.
 - **Load balancing** — aux loss to flatten expert utilization. DeepSeek-V3 drops aux loss for a bias-based balancing scheme.
 
-→ Deep Dives: [[Deep Dives/MoE Routing|MoE Routing]] (top-k, expert choice, shared / fine-grained experts), [[Deep Dives/MoE Load Balancing|MoE Load Balancing]] (aux loss vs bias-based, collapse)
+→ Deep Dives: [[MoE Routing|MoE Routing]] (top-k, expert choice, shared / fine-grained experts), [[MoE Load Balancing|MoE Load Balancing]] (aux loss vs bias-based, collapse)
 
 ## Why this exists
 - Decouples model **capacity** (`P_total`) from per-token **compute** (`P_active`).
@@ -50,7 +50,7 @@ Annotated reference. Structure follows the Kimi K2 and DeepSeek-V3 open releases
 | `ep_size` | EP world size (how many ranks share `E`) | varies | varies |
 | `E_loc` | local experts per rank, `E / ep_size` | — | — |
 
-The shared expert's role is to absorb the common case so the routed experts can specialize — see [[Deep Dives/MoE Routing#Shared experts (DeepSeek design)|shared experts]].
+The shared expert's role is to absorb the common case so the routed experts can specialize — see [[MoE Routing#Shared experts (DeepSeek design)|shared experts]].
 
 ### Forward pass — single rank (no EP)
 
@@ -126,7 +126,7 @@ class MoELayer(nn.Module):
 
 ### Forward + backward across EP ranks
 
-Once experts are sharded across GPUs (Expert Parallelism — see [[Deep Dives/MoE Training Systems|MoE Training Systems]]), step 3 of `MoELayer.forward` becomes two all-to-alls per direction. Standard PyTorch autograd doesn't see across `dist.all_to_all`, so EP is wrapped in a `torch.autograd.Function` that defines its own backward.
+Once experts are sharded across GPUs (Expert Parallelism — see [[MoE Training Systems|MoE Training Systems]]), step 3 of `MoELayer.forward` becomes two all-to-alls per direction. Standard PyTorch autograd doesn't see across `dist.all_to_all`, so EP is wrapped in a `torch.autograd.Function` that defines its own backward.
 
 ```python
 class EPDispatchCombine(torch.autograd.Function):
@@ -251,8 +251,8 @@ class EPDispatchCombine(torch.autograd.Function):
 
 Two things this makes concrete:
 
-- **4 all-to-alls per MoE layer per training step** — dispatch + combine in fwd, combine⁻¹ + dispatch⁻¹ in bwd. The collective load that pins EP groups across ranks. Optimized kernels (DeepEP, FlashMoE) shrink bandwidth waste, not the count. See [[Deep Dives/MoE Training Systems#All-to-all volume and topology|all-to-all volume]].
-- **`routed_bias` is model state, not a gradient quantity** — `update_bias` runs in `no_grad`. Under async RL, this state has to be sync'd across rollout replicas the same way weights are, or each replica drifts its own routing distribution. Open issue (see [[Deep Dives/MoE Routing#Routing collapse & train/inference drift|routing drift]]).
+- **4 all-to-alls per MoE layer per training step** — dispatch + combine in fwd, combine⁻¹ + dispatch⁻¹ in bwd. The collective load that pins EP groups across ranks. Optimized kernels (DeepEP, FlashMoE) shrink bandwidth waste, not the count. See [[MoE Training Systems#All-to-all volume and topology|all-to-all volume]].
+- **`routed_bias` is model state, not a gradient quantity** — `update_bias` runs in `no_grad`. Under async RL, this state has to be sync'd across rollout replicas the same way weights are, or each replica drifts its own routing distribution. Open issue (see [[MoE Routing#Routing collapse & train/inference drift|routing drift]]).
 
 ## What it breaks
 - **Routing is token-conditional** → expert load varies per-batch, drifts over training.

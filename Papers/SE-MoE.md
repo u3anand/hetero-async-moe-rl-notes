@@ -14,7 +14,7 @@ aliases:
 
 # SE-MoE
 
-[PDF](PDFs/moe-training-systems/2205.10034__se-moe.pdf) · [Source](https://arxiv.org/pdf/2205.10034.pdf)
+[PDF](2205.10034__se-moe.pdf) · [Source](https://arxiv.org/pdf/2205.10034.pdf)
 
 ## Why This Paper Matters
 _TODO_
@@ -34,5 +34,5 @@ _TODO_
 _TODO_
 
 ## Links
-- [[Deep Dives/MoE Training Systems]]
+- [[MoE Training Systems]]
 - [[MoE vs Dense Workload]]

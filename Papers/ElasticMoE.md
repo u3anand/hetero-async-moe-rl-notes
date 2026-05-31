@@ -14,7 +14,7 @@ aliases:
 
 # ElasticMoE
 
-[PDF](PDFs/moe-training-systems/2510.02613__elasticmoe.pdf) · [Source](https://arxiv.org/pdf/2510.02613.pdf)
+[PDF](2510.02613__elasticmoe.pdf) · [Source](https://arxiv.org/pdf/2510.02613.pdf)
 
 ## Why This Paper Matters
 _TODO_
@@ -34,5 +34,5 @@ _TODO_
 _TODO_
 
 ## Links
-- [[Deep Dives/MoE Training Systems]]
+- [[MoE Training Systems]]
 - [[MoE vs Dense Workload]]

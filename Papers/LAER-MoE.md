@@ -14,7 +14,7 @@ aliases:
 
 # LAER-MoE
 
-[PDF](PDFs/moe-training-systems/2602.11686__laer-moe.pdf) · [Source](https://arxiv.org/pdf/2602.11686.pdf)
+[PDF](2602.11686__laer-moe.pdf) · [Source](https://arxiv.org/pdf/2602.11686.pdf)
 
 ## Why This Paper Matters
 _TODO_
@@ -34,5 +34,5 @@ _TODO_
 _TODO_
 
 ## Links
-- [[Deep Dives/MoE Training Systems]]
+- [[MoE Training Systems]]
 - [[MoE vs Dense Workload]]

@@ -92,4 +92,4 @@ Then **swap to Qwen3-30B-A3B** (FP8 + TP=2) reusing the same harness unchanged. 
 New RL algorithm (GRPO unchanged) · new optimizer or parallelism axis · final SWE-bench pass-rate / convergence-quality claims · dynamic/elastic cluster membership · repo-prefix KV cache · multimodal/VLA RL · Megatron port of the mechanisms (slime port is a stretch robustness experiment).
 
 ## Related notes
-[[WatGPU]] (cluster) · [[Initial Plan]] (initial phase) · concept notes: [[MoE vs Dense Workload]], [[MoE Architecture]], [[Inference]], [[Training]], [[Transformer]] · paper notes in `Papers/` ([[Papers/AReaL-Hex]], [[Papers/ReLibra]], [[Papers/R3]], [[Papers/Router-Aware IS]], [[Papers/prime-rl]], [[Papers/slime]], [[Papers/HeterMoE]], [[Papers/Lazarus]]).
+[[WatGPU]] (cluster) · [[Initial Plan]] (initial phase) · concept notes: [[MoE vs Dense Workload]], [[MoE Architecture]], [[Inference]], [[Training]], [[Transformer]] · paper notes in `Papers/` ([[AReaL-Hex]], [[ReLibra]], [[R3]], [[Router-Aware IS]], [[Papers/prime-rl]], [[Papers/slime]], [[HeterMoE]], [[Lazarus]]).

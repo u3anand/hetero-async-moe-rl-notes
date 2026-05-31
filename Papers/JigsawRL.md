@@ -14,7 +14,7 @@ aliases:
 
 # JigsawRL
 
-[PDF](PDFs/rl-systems/2604.23838__jigsawrl.pdf) · [Source](https://arxiv.org/pdf/2604.23838.pdf)
+[PDF](2604.23838__jigsawrl.pdf) · [Source](https://arxiv.org/pdf/2604.23838.pdf)
 
 ## Why This Paper Matters
 _TODO_

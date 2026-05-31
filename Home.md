@@ -16,19 +16,19 @@ Meta-context (research direction, papers being read, related-work catalog) lives
 - [[MoE vs Dense Workload]] — compute / memory / comms / hetero interaction — the centerpiece
 
 ## Deep Dives — Architecture (lookup material)
-- [[Deep Dives/Attention Variants|Attention Variants]] — MHA / MQA / GQA / MLA + FlashAttention v1–v3
-- [[Deep Dives/FFN Variants and Other Sublayers|FFN, Norms, RoPE, ALiBi]] — small sublayer choices, grouped
-- [[Deep Dives/MoE Routing|MoE Routing]] — top-k, expert choice, shared / fine-grained experts
-- [[Deep Dives/MoE Load Balancing|MoE Load Balancing]] — aux loss, bias-based, collapse
+- [[Attention Variants|Attention Variants]] — MHA / MQA / GQA / MLA + FlashAttention v1–v3
+- [[FFN Variants and Other Sublayers|FFN, Norms, RoPE, ALiBi]] — small sublayer choices, grouped
+- [[MoE Routing|MoE Routing]] — top-k, expert choice, shared / fine-grained experts
+- [[MoE Load Balancing|MoE Load Balancing]] — aux loss, bias-based, collapse
 
 ## Deep Dives — Systems (essential reference)
-- [[Deep Dives/Dense Training Systems|Dense Training Systems]] — FSDP/ZeRO, TP, PP, recompute, FP8
-- [[Deep Dives/Dense Inference Systems|Dense Inference Systems]] — PagedAttention, RadixAttention, disaggregation, speculative decoding
-- [[Deep Dives/MoE Training Systems|MoE Training Systems]] — all-to-all, EP composition, MegaBlocks/Tutel/FlashMoE, hetero MoE
-- [[Deep Dives/MoE Inference Systems|MoE Inference Systems]] — EP inference, expert offloading, hot-expert replication, RL-on-MoE stacks
+- [[Dense Training Systems|Dense Training Systems]] — FSDP/ZeRO, TP, PP, recompute, FP8
+- [[Dense Inference Systems|Dense Inference Systems]] — PagedAttention, RadixAttention, disaggregation, speculative decoding
+- [[MoE Training Systems|MoE Training Systems]] — all-to-all, EP composition, MegaBlocks/Tutel/FlashMoE, hetero MoE
+- [[MoE Inference Systems|MoE Inference Systems]] — EP inference, expert offloading, hot-expert replication, RL-on-MoE stacks
 
 ## Bibliography
-- [[Papers/Index|Papers Index]] — downloaded PDFs and scaffold notes by topic
+- [[Index|Papers Index]] — downloaded PDFs and scaffold notes by topic
 
 ## Papers
 *Per-paper scaffold notes live in `Papers/`.*

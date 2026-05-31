@@ -14,7 +14,7 @@ aliases:
 
 # DeepSpeed-TED
 
-[PDF](PDFs/moe-training-systems/2303.06318__deepspeed-ted.pdf) · [Source](https://arxiv.org/pdf/2303.06318.pdf)
+[PDF](2303.06318__deepspeed-ted.pdf) · [Source](https://arxiv.org/pdf/2303.06318.pdf)
 
 ## Why This Paper Matters
 _TODO_
@@ -34,5 +34,5 @@ _TODO_
 _TODO_
 
 ## Links
-- [[Deep Dives/MoE Training Systems]]
+- [[MoE Training Systems]]
 - [[MoE vs Dense Workload]]

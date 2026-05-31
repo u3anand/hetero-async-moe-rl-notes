@@ -42,4 +42,4 @@ Uses router logits to rescale IS weights so the IS correction reflects routing d
 
 ## Links
 - [[Research Plan]]
-- [[Papers/R3|R3]]
+- [[R3|R3]]

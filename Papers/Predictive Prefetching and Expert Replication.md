@@ -15,7 +15,7 @@ aliases:
 
 # Predictive Prefetching and Expert Replication
 
-[PDF](PDFs/moe-inference-systems/2605.11537__predictive-prefetching-expert-replication.pdf) · [Source](https://arxiv.org/pdf/2605.11537.pdf)
+[PDF](2605.11537__predictive-prefetching-expert-replication.pdf) · [Source](https://arxiv.org/pdf/2605.11537.pdf)
 
 ## Why This Paper Matters
 _TODO_
@@ -35,5 +35,5 @@ _TODO_
 _TODO_
 
 ## Links
-- [[Deep Dives/MoE Inference Systems]]
+- [[MoE Inference Systems]]
 - [[Inference]]

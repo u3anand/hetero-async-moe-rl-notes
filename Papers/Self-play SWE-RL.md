@@ -14,7 +14,7 @@ aliases:
 
 # Self-play SWE-RL
 
-[PDF](PDFs/swe-rl-workloads/2512.18552__self-play-swe-rl.pdf) · [Source](https://arxiv.org/pdf/2512.18552.pdf)
+[PDF](2512.18552__self-play-swe-rl.pdf) · [Source](https://arxiv.org/pdf/2512.18552.pdf)
 
 ## Why This Paper Matters
 _TODO_

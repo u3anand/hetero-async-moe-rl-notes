@@ -15,7 +15,7 @@ aliases:
 
 # AReaL-Hex
 
-[PDF](PDFs/rl-systems/2511.00796__areal-hex.pdf) · [Source](https://arxiv.org/pdf/2511.00796.pdf)
+[PDF](2511.00796__areal-hex.pdf) · [Source](https://arxiv.org/pdf/2511.00796.pdf)
 
 ## Why This Paper Matters
 _TODO_

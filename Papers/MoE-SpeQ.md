@@ -14,7 +14,7 @@ aliases:
 
 # MoE-SpeQ
 
-[PDF](PDFs/moe-inference-systems/2511.14102__moe-speq.pdf) · [Source](https://arxiv.org/pdf/2511.14102.pdf)
+[PDF](2511.14102__moe-speq.pdf) · [Source](https://arxiv.org/pdf/2511.14102.pdf)
 
 ## Why This Paper Matters
 _TODO_
@@ -34,5 +34,5 @@ _TODO_
 _TODO_
 
 ## Links
-- [[Deep Dives/MoE Inference Systems]]
+- [[MoE Inference Systems]]
 - [[Inference]]

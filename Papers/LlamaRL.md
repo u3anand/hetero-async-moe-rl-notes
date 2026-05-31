@@ -14,7 +14,7 @@ aliases:
 
 # LlamaRL
 
-[PDF](PDFs/rl-systems/2505.24034__llamarl.pdf) · [Source](https://arxiv.org/pdf/2505.24034.pdf)
+[PDF](2505.24034__llamarl.pdf) · [Source](https://arxiv.org/pdf/2505.24034.pdf)
 
 ## Why This Paper Matters
 _TODO_

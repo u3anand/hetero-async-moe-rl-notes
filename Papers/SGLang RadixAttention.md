@@ -15,7 +15,7 @@ aliases:
 
 # SGLang RadixAttention
 
-[PDF](PDFs/llm-serving-systems/2312.07104__sglang-radixattention.pdf) · [Source](https://arxiv.org/pdf/2312.07104.pdf)
+[PDF](2312.07104__sglang-radixattention.pdf) · [Source](https://arxiv.org/pdf/2312.07104.pdf)
 
 ## Why This Paper Matters
 _TODO_
@@ -35,5 +35,5 @@ _TODO_
 _TODO_
 
 ## Links
-- [[Deep Dives/Dense Inference Systems]]
+- [[Dense Inference Systems]]
 - [[Inference]]

@@ -14,7 +14,7 @@ aliases:
 
 # Splitwise
 
-[PDF](PDFs/llm-serving-systems/2311.18677__splitwise.pdf) · [Source](https://arxiv.org/pdf/2311.18677.pdf)
+[PDF](2311.18677__splitwise.pdf) · [Source](https://arxiv.org/pdf/2311.18677.pdf)
 
 ## Why This Paper Matters
 _TODO_
@@ -34,5 +34,5 @@ _TODO_
 _TODO_
 
 ## Links
-- [[Deep Dives/Dense Inference Systems]]
+- [[Dense Inference Systems]]
 - [[Inference]]

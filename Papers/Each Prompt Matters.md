@@ -15,7 +15,7 @@ aliases:
 
 # Each Prompt Matters
 
-[PDF](PDFs/rl-systems/2512.07710__each-prompt-matters.pdf) · [Source](https://arxiv.org/pdf/2512.07710.pdf)
+[PDF](2512.07710__each-prompt-matters.pdf) · [Source](https://arxiv.org/pdf/2512.07710.pdf)
 
 ## Why This Paper Matters
 _TODO_

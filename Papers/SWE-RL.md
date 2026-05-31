@@ -15,7 +15,7 @@ aliases:
 
 # SWE-RL
 
-[PDF](PDFs/swe-rl-workloads/2502.18449__swe-rl.pdf) · [Source](https://arxiv.org/pdf/2502.18449.pdf)
+[PDF](2502.18449__swe-rl.pdf) · [Source](https://arxiv.org/pdf/2502.18449.pdf)
 
 ## Why This Paper Matters
 _TODO_

@@ -3,8 +3,8 @@
 Decoder-only LLM = embeddings + L identical **blocks** + LM head.
 
 ## Block (pre-norm)
-1. **Attention** — multi-head, causal-masked. Params per block: `4·d²` (Q, K, V, O projections). → Deep Dive: [[Deep Dives/Attention Variants|Attention Variants]]
-2. **FFN** — 2-layer MLP. Modern variant SwiGLU: `down(silu(gate(x)) * up(x))`. Params per block ≈ `8·d²` (with d_ff ≈ 4d for classic; ~8/3·d for SwiGLU at iso-FLOPs). → Deep Dive: [[Deep Dives/FFN Variants and Other Sublayers|FFN Variants and Other Sublayers]]
+1. **Attention** — multi-head, causal-masked. Params per block: `4·d²` (Q, K, V, O projections). → Deep Dive: [[Attention Variants|Attention Variants]]
+2. **FFN** — 2-layer MLP. Modern variant SwiGLU: `down(silu(gate(x)) * up(x))`. Params per block ≈ `8·d²` (with d_ff ≈ 4d for classic; ~8/3·d for SwiGLU at iso-FLOPs). → Deep Dive: [[FFN Variants and Other Sublayers|FFN Variants and Other Sublayers]]
 3. Residual + RMSNorm around each sublayer.
 
 ## Where parameters live

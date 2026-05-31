@@ -15,7 +15,7 @@ aliases:
 
 # Fiddler
 
-[PDF](PDFs/moe-inference-systems/2402.07033__fiddler.pdf) · [Source](https://arxiv.org/pdf/2402.07033.pdf)
+[PDF](2402.07033__fiddler.pdf) · [Source](https://arxiv.org/pdf/2402.07033.pdf)
 
 ## Why This Paper Matters
 _TODO_
@@ -35,5 +35,5 @@ _TODO_
 _TODO_
 
 ## Links
-- [[Deep Dives/MoE Inference Systems]]
+- [[MoE Inference Systems]]
 - [[Inference]]

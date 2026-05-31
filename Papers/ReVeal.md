@@ -15,7 +15,7 @@ aliases:
 
 # ReVeal
 
-[PDF](PDFs/swe-rl-workloads/2506.11442__reveal-self-evolving-code-agents.pdf) · [Source](https://arxiv.org/pdf/2506.11442.pdf)
+[PDF](2506.11442__reveal-self-evolving-code-agents.pdf) · [Source](https://arxiv.org/pdf/2506.11442.pdf)
 
 ## Why This Paper Matters
 _TODO_

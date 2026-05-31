@@ -15,7 +15,7 @@ aliases:
 
 # HybridFlow veRL
 
-[PDF](PDFs/rl-systems/2409.19256__hybridflow-verl.pdf) · [Source](https://arxiv.org/pdf/2409.19256.pdf)
+[PDF](2409.19256__hybridflow-verl.pdf) · [Source](https://arxiv.org/pdf/2409.19256.pdf)
 
 ## Why This Paper Matters
 _TODO_

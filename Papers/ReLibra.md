@@ -52,5 +52,5 @@ _TODO_
 
 ## Links
 - [[Research Plan]]
-- [[Papers/R3|R3]]
-- [[Deep Dives/MoE Load Balancing|MoE Load Balancing]]
+- [[R3|R3]]
+- [[MoE Load Balancing|MoE Load Balancing]]

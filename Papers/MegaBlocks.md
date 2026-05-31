@@ -14,7 +14,7 @@ aliases:
 
 # MegaBlocks
 
-[PDF](PDFs/moe-training-systems/2211.15841__megablocks.pdf) · [Source](https://arxiv.org/pdf/2211.15841.pdf)
+[PDF](2211.15841__megablocks.pdf) · [Source](https://arxiv.org/pdf/2211.15841.pdf)
 
 ## Why This Paper Matters
 _TODO_
@@ -34,5 +34,5 @@ _TODO_
 _TODO_
 
 ## Links
-- [[Deep Dives/MoE Training Systems]]
+- [[MoE Training Systems]]
 - [[MoE vs Dense Workload]]

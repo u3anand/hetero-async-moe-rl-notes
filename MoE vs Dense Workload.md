@@ -42,13 +42,13 @@ Side-by-side along the axes that drive system design. The centerpiece note for u
 - MoE adds EP all-to-all, which spans **every rank holding an expert**. If experts are sharded across tiers, every token's roundtrip pays the slow-link cost. EP collapses to `slow-link bandwidth × per-layer all-to-all volume`.
 - → "Hetero" + "MoE" interact non-trivially. Composing existing solutions (hetero RL scheduler + homogeneous-cluster MoE EP) does **not** give a working system — the slow tier strangles EP.
 
-→ Deep Dive: [[Deep Dives/MoE Training Systems|MoE Training Systems]] (EP all-to-all mechanics + hetero MoE pretraining systems)
+→ Deep Dive: [[MoE Training Systems|MoE Training Systems]] (EP all-to-all mechanics + hetero MoE pretraining systems)
 
 ## RL training implications
 - **Rollouts**: per-token routing varies → cache reuse depends on expert co-location, not only prefix overlap (see [[Inference]]).
 - **Async rollout replicas**: each replica has its own routing distribution → train/inference KL divergence grows; asymmetric expert staleness across replicas.
 - **Sparse per-expert gradient** → updates per expert depend on routing distribution that itself drifted since the replica's weights were broadcast.
 
-→ Deep Dive: [[Deep Dives/MoE Inference Systems|MoE Inference Systems]] (RL-on-MoE rollout stacks, hot-expert replication)
+→ Deep Dive: [[MoE Inference Systems|MoE Inference Systems]] (RL-on-MoE rollout stacks, hot-expert replication)
 
 These are the live open seams in the paper-direction search (see agent memory: `research-direction`).

@@ -20,7 +20,7 @@ Two phases per request.
 - **Linear in context length** → dominates memory for long-context serving.
 - GQA/MQA reduce `n_kv_heads` (shared K/V across query heads) → cheaper cache.
 
-→ Deep Dives: [[Deep Dives/Attention Variants|Attention Variants]] (GQA/MLA shrink the cache further), [[Deep Dives/Dense Inference Systems|Dense Inference Systems]] (PagedAttention, RadixAttention, disaggregation, speculative decoding)
+→ Deep Dives: [[Attention Variants|Attention Variants]] (GQA/MLA shrink the cache further), [[Dense Inference Systems|Dense Inference Systems]] (PagedAttention, RadixAttention, disaggregation, speculative decoding)
 
 ## Why this matters for the RL direction
 (See agent memory: `research-direction`.)
@@ -29,4 +29,4 @@ Two phases per request.
 - **Decode** is the dominant cost of long-horizon traces (many tool-call turns).
 - **Prefix overlap** across rollouts of the same repo → KV-cache reuse opportunity across replicas / tiers.
 
-→ MoE adds another wrinkle: routing varies per-token, so cache reuse interacts with expert co-location (see [[MoE vs Dense Workload]], [[Deep Dives/MoE Inference Systems|MoE Inference Systems]]).
+→ MoE adds another wrinkle: routing varies per-token, so cache reuse interacts with expert co-location (see [[MoE vs Dense Workload]], [[MoE Inference Systems|MoE Inference Systems]]).

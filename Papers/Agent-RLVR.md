@@ -14,7 +14,7 @@ aliases:
 
 # Agent-RLVR
 
-[PDF](PDFs/swe-rl-workloads/2506.11425__agent-rlvr.pdf) · [Source](https://arxiv.org/pdf/2506.11425.pdf)
+[PDF](2506.11425__agent-rlvr.pdf) · [Source](https://arxiv.org/pdf/2506.11425.pdf)
 
 ## Why This Paper Matters
 _TODO_

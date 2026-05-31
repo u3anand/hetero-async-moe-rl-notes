@@ -14,7 +14,7 @@ aliases:
 
 # HarMoEny
 
-[PDF](PDFs/moe-inference-systems/2506.12417__harmony.pdf) · [Source](https://arxiv.org/pdf/2506.12417.pdf)
+[PDF](2506.12417__harmony.pdf) · [Source](https://arxiv.org/pdf/2506.12417.pdf)
 
 ## Why This Paper Matters
 _TODO_
@@ -34,5 +34,5 @@ _TODO_
 _TODO_
 
 ## Links
-- [[Deep Dives/MoE Inference Systems]]
+- [[MoE Inference Systems]]
 - [[Inference]]

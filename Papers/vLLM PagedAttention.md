@@ -15,7 +15,7 @@ aliases:
 
 # vLLM PagedAttention
 
-[PDF](PDFs/llm-serving-systems/2309.06180__vllm-pagedattention.pdf) · [Source](https://arxiv.org/pdf/2309.06180.pdf)
+[PDF](2309.06180__vllm-pagedattention.pdf) · [Source](https://arxiv.org/pdf/2309.06180.pdf)
 
 ## Why This Paper Matters
 _TODO_
@@ -35,5 +35,5 @@ _TODO_
 _TODO_
 
 ## Links
-- [[Deep Dives/Dense Inference Systems]]
+- [[Dense Inference Systems]]
 - [[Inference]]

@@ -19,7 +19,7 @@ Per step: forward → loss → backward → optimizer.
 
 Composable: e.g. FSDP × TP × PP × EP. Each axis layers its own collectives.
 
-→ Deep Dives: [[Deep Dives/Dense Training Systems|Dense Training Systems]] (FSDP/TP/PP composition, recompute, FP8), [[Deep Dives/MoE Training Systems|MoE Training Systems]] (EP, all-to-all kernels, hetero MoE)
+→ Deep Dives: [[Dense Training Systems|Dense Training Systems]] (FSDP/TP/PP composition, recompute, FP8), [[MoE Training Systems|MoE Training Systems]] (EP, all-to-all kernels, hetero MoE)
 
 ## Hetero cluster pain
 Every collective syncs to its slowest member. A parallel group spanning fast + slow GPUs runs at slow speed.

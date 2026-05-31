@@ -15,7 +15,7 @@ aliases:
 
 # RollArt
 
-[PDF](PDFs/rl-systems/2512.22560__rollart.pdf) · [Source](https://arxiv.org/pdf/2512.22560.pdf)
+[PDF](2512.22560__rollart.pdf) · [Source](https://arxiv.org/pdf/2512.22560.pdf)
 
 ## Why This Paper Matters
 _TODO_

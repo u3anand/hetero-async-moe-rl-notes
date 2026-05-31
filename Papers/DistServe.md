@@ -14,7 +14,7 @@ aliases:
 
 # DistServe
 
-[PDF](PDFs/llm-serving-systems/2401.09670__distserve.pdf) · [Source](https://arxiv.org/pdf/2401.09670.pdf)
+[PDF](2401.09670__distserve.pdf) · [Source](https://arxiv.org/pdf/2401.09670.pdf)
 
 ## Why This Paper Matters
 _TODO_
@@ -34,5 +34,5 @@ _TODO_
 _TODO_
 
 ## Links
-- [[Deep Dives/Dense Inference Systems]]
+- [[Dense Inference Systems]]
 - [[Inference]]

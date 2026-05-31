@@ -15,7 +15,7 @@ aliases:
 
 # AReaL
 
-[PDF](PDFs/rl-systems/2505.24298__areal.pdf) · [Source](https://arxiv.org/pdf/2505.24298.pdf)
+[PDF](2505.24298__areal.pdf) · [Source](https://arxiv.org/pdf/2505.24298.pdf)
 
 ## Why This Paper Matters
 _TODO_

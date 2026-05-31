@@ -14,7 +14,7 @@ aliases:
 
 # TaiChi
 
-[PDF](PDFs/llm-serving-systems/2508.01989__taichi.pdf) · [Source](https://arxiv.org/pdf/2508.01989.pdf)
+[PDF](2508.01989__taichi.pdf) · [Source](https://arxiv.org/pdf/2508.01989.pdf)
 
 ## Why This Paper Matters
 _TODO_
@@ -34,5 +34,5 @@ _TODO_
 _TODO_
 
 ## Links
-- [[Deep Dives/Dense Inference Systems]]
+- [[Dense Inference Systems]]
 - [[Inference]]
