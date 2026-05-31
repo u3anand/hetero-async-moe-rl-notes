@@ -26,8 +26,17 @@ nvidia-smi -L || true
 
 cd "$FORK"
 
+# Use the venv binaries DIRECTLY, never `uv run`: `uv run`/`uv sync` re-sync the env to
+# prime-rl's lockfile and DROP our editable b1tel (not a declared dep), which silently
+# no-ops the telemetry. Reinstall b1tel here as an idempotent safeguard (uv pip install
+# does not trigger a sync).
+VPY="$FORK/.venv/bin/python"
+VTORCHRUN="$FORK/.venv/bin/torchrun"
+uv pip install -e "$REPO/code/b1" -q
+"$VPY" -c "import b1tel; print('b1tel', b1tel.__file__)"
+
 # --- system sidecar: 1 Hz nvidia-smi → $RUN/telemetry/system.jsonl (same run-dir as the trainer) ---
-uv run python -m b1tel.sampler --run-dir "$RUN" --interval 1.0 &
+"$VPY" -m b1tel.sampler --run-dir "$RUN" --interval 1.0 &
 SAMPLER=$!
 trap 'kill $SAMPLER 2>/dev/null || true' EXIT
 
@@ -39,7 +48,7 @@ TRACE=${TRACE:-1}
 TRACE_ARGS=()
 [ "$TRACE" = "1" ] && TRACE_ARGS=(--trace-path "$RUN/trace")
 set +e
-uv run torchrun --standalone --nproc-per-node=1 \
+"$VTORCHRUN" --standalone --nproc-per-node=1 \
   -m prime_rl.trainer.rl.train \
   @ "$REPO/code/b1/configs/smoke-train.toml" \
   --output-dir "$RUN" "${TRACE_ARGS[@]}"
@@ -51,7 +60,7 @@ echo "trainer exit code: $TRAINER_RC (TRACE=$TRACE)"
 sleep 2; kill $SAMPLER 2>/dev/null || true; trap - EXIT
 
 echo "== validation =="
-TRACE="$TRACE" uv run python - "$RUN" <<'PY'
+TRACE="$TRACE" "$VPY" - "$RUN" <<'PY'
 import gzip, json, os, sys
 from pathlib import Path
 

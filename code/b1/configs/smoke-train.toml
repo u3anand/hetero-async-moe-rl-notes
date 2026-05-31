@@ -18,9 +18,12 @@ seq_len = 1024
 # Random-init the OLMoE architecture instead of loading pretrained weights. A plumbing
 # smoke test (telemetry + CUDA trace) doesn't need real weights, and this sidesteps a real
 # OLMoE↔prime-rl gap: the HF checkpoint stores per-expert weights but prime-rl's MoE expects
-# a fused experts.down_proj (OLMoE has no custom impl in this fork). force_balanced_routing
-# can't help (custom-impl only), so keep batch/seq small to avoid untrained-routing OOM.
+# a fused experts.down_proj (OLMoE has no custom impl in this fork).
 random_init = true
+# Truncate to a few layers. Full 7B OLMoE trains at fp32 (optimization_dtype, a load-bearing
+# knob we must not change) → params+AdamW ≫ one 44GB L40S → OOM. 2 layers keeps the MoE
+# architecture (routers/experts) for the telemetry+trace path while fitting comfortably.
+num_layers = 2
 
 [data.fake]
 batch_size = 2              # random micro-batches; no orchestrator / inference / udocker needed
