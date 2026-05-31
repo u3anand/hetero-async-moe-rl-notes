@@ -13,10 +13,9 @@ impl = "hf"                 # OLMoE has no custom trainer impl in this fork → 
 attn = "sdpa"               # avoid the flash-attn wheel for the first smoke (default is flash_attention_2)
 moe_use_grouped_mm = false  # REQUIRED — grouped_mm needs SM>=9.0; watgpu308 has none (L40S/A6000/Ada)
 seq_len = 1024
-
-[model.debug]
-# Round-robin routing for fake data — untrained routing would OOM under severe imbalance.
-force_balanced_routing = true
+# NOTE: model.debug.force_balanced_routing is NOT usable here — it only patches custom-impl
+# MoE routers (hf OLMoE raises "No MoE routers found"). Unneeded anyway: we load pretrained
+# OLMoE-Instruct weights (already-balanced routing), so fake-data imbalance OOM isn't a risk.
 
 [data.fake]
 batch_size = 2              # random micro-batches; no orchestrator / inference / udocker needed
