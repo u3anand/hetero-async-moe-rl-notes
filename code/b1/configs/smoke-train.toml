@@ -13,9 +13,14 @@ impl = "hf"                 # OLMoE has no custom trainer impl in this fork → 
 attn = "sdpa"               # avoid the flash-attn wheel for the first smoke (default is flash_attention_2)
 moe_use_grouped_mm = false  # REQUIRED — grouped_mm needs SM>=9.0; watgpu308 has none (L40S/A6000/Ada)
 seq_len = 1024
-# NOTE: model.debug.force_balanced_routing is NOT usable here — it only patches custom-impl
-# MoE routers (hf OLMoE raises "No MoE routers found"). Unneeded anyway: we load pretrained
-# OLMoE-Instruct weights (already-balanced routing), so fake-data imbalance OOM isn't a risk.
+
+[model.debug]
+# Random-init the OLMoE architecture instead of loading pretrained weights. A plumbing
+# smoke test (telemetry + CUDA trace) doesn't need real weights, and this sidesteps a real
+# OLMoE↔prime-rl gap: the HF checkpoint stores per-expert weights but prime-rl's MoE expects
+# a fused experts.down_proj (OLMoE has no custom impl in this fork). force_balanced_routing
+# can't help (custom-impl only), so keep batch/seq small to avoid untrained-routing OOM.
+random_init = true
 
 [data.fake]
 batch_size = 2              # random micro-batches; no orchestrator / inference / udocker needed
