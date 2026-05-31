@@ -3,7 +3,7 @@
 # Format: <name> <fork-remote> <commit|branch>
 #
 # Filled when the forks are created (see "Fork repos + add submodules").
-prime-rl        git@github.com:u3anand/prime-rl.git         618de8a51110b906980c24d1589a376f725c5d9e   # fork point; branch b1-instrumentation off this
+prime-rl        git@github.com:u3anand/prime-rl.git         39149d76a   # b1-instrumentation: A3 telemetry emits (t_train/broadcast-split/episode/queue) + udocker via config (off 618de8a)
 vllm            git@github.com:u3anand/vllm.git             f56ac5689   # b1-instrumentation: A2 router-logit hook (off 6bdabba PLACEHOLDER — rebase onto the vLLM version prime-rl uses on the cluster, then re-pin)
 mini-swe-agent  git@github.com:u3anand/mini-swe-agent.git   087c55d1   # b1-instrumentation: A1 UdockerEnvironment + tool-call telemetry (off adfe2023)
 udocker         pip:udocker                                  TBD   # record `udocker --version` after setup.sh
