@@ -31,23 +31,32 @@ uv run python -m b1tel.sampler --run-dir "$RUN" --interval 1.0 &
 SAMPLER=$!
 trap 'kill $SAMPLER 2>/dev/null || true' EXIT
 
-# --- trainer-only, single GPU, fake data, trace on. torchrun standalone (the rl entrypoint
-#     launches the trainer under torchrun; replicate it for one local rank). ---
+# --- trainer-only, single GPU, fake data. torchrun standalone (the rl entrypoint launches
+#     the trainer under torchrun; replicate it for one local rank). TRACE=0 disables the
+#     torch CUDA profiler (its Kineto/CUPTI teardown segfaults on some driver/CUDA combos —
+#     isolate it from the telemetry streams). ---
+TRACE=${TRACE:-1}
+TRACE_ARGS=()
+[ "$TRACE" = "1" ] && TRACE_ARGS=(--trace-path "$RUN/trace")
+set +e
 uv run torchrun --standalone --nproc-per-node=1 \
   -m prime_rl.trainer.rl.train \
   @ "$REPO/code/b1/configs/smoke-train.toml" \
-  --output-dir "$RUN" \
-  --trace-path "$RUN/trace"
+  --output-dir "$RUN" "${TRACE_ARGS[@]}"
+TRAINER_RC=$?
+set -e
+echo "trainer exit code: $TRAINER_RC (TRACE=$TRACE)"
 
 # give the sampler a tick to flush, then stop it
 sleep 2; kill $SAMPLER 2>/dev/null || true; trap - EXIT
 
 echo "== validation =="
-uv run python - "$RUN" <<'PY'
-import gzip, json, sys
+TRACE="$TRACE" uv run python - "$RUN" <<'PY'
+import gzip, json, os, sys
 from pathlib import Path
 
 run = Path(sys.argv[1]); tel = run / "telemetry"
+want_trace = os.environ.get("TRACE", "1") == "1"
 ok = True
 
 def check(name, cond, detail=""):
@@ -71,17 +80,20 @@ need = {"gpu_index", "sm_active", "dram_active"}
 have_sys = bool(srows) and all(need <= set(r) for r in srows)
 check("system.jsonl per-GPU sm/dram rows", have_sys, f"{len(srows)} rows")
 
-# (c) trace_0.json.gz exists and opens
-traces = list((run / "trace").glob("trace_*.json.gz"))
-trace_ok = False
-if traces:
-    try:
-        with gzip.open(traces[0]) as f:
-            json.load(f)
-        trace_ok = True
-    except Exception as e:
-        print(f"        trace open error: {e!r}")
-check("CUDA trace_*.json.gz opens", trace_ok, traces[0].name if traces else "no trace file")
+# (c) trace_0.json.gz exists and opens (skipped when TRACE=0)
+if not want_trace:
+    print("  [SKIP] CUDA trace — TRACE=0 (profiler disabled)")
+else:
+    traces = list((run / "trace").glob("trace_*.json.gz"))
+    trace_ok = False
+    if traces:
+        try:
+            with gzip.open(traces[0]) as f:
+                json.load(f)
+            trace_ok = True
+        except Exception as e:
+            print(f"        trace open error: {e!r}")
+    check("CUDA trace_*.json.gz opens", trace_ok, traces[0].name if traces else "no trace file")
 
 print(f"\nSMOKE {'OK ✅' if ok else 'FAILED ❌'}  → {run}")
 sys.exit(0 if ok else 1)
