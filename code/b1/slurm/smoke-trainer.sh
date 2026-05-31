@@ -6,8 +6,8 @@
 # Validates 3 things: step.jsonl(t_train), system.jsonl(per-GPU), trace_0.json.gz.
 set -euo pipefail
 
-HERE=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
-REPO=$(cd "$HERE/../.." && pwd)
+HERE=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)   # code/b1/slurm
+REPO=$(cd "$HERE/../../.." && pwd)                      # repo root (slurm -> b1 -> code -> root)
 FORK="$REPO/code/forks/prime-rl"
 B1=${B1_ROOT:-/u3/u3anand/b1}
 
