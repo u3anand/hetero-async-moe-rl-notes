@@ -1,24 +1,42 @@
 #!/usr/bin/env bash
-# check-node.sh [NODE] [--models] — live usage snapshot of a WatGPU node + a
-# "can we run our workload" verdict. Read-only (Slurm queries only; no allocation
-# unless --models is passed, which grabs a 1-CPU slot to read GPU models).
-#
-# Run on the login node, or from the laptop:
-#   ssh u3anand@watgpu.cs.uwaterloo.ca 'bash -s' < code/b1/slurm/check-node.sh
-#   ssh u3anand@watgpu.cs.uwaterloo.ca 'bash -s -- watgpu308 --models' < code/b1/slurm/check-node.sh
+# check-node.sh [NODE|all] [--models] — WatGPU availability snapshot.
+#   (no arg)            → detailed view of watgpu308 (our node) + can-we-run verdict
+#   watgpu408           → detailed view of any node
+#   all                 → compact one-line-per-node cluster table
+#   --models            → also list physical GPU models (grabs a 1-CPU slot; single-node only)
+# Read-only Slurm queries (no allocation unless --models). Run on the login node or:
+#   ssh u3anand@watgpu.cs.uwaterloo.ca 'bash -s -- all' < code/b1/slurm/check-node.sh
 set -uo pipefail
 
-NODE=watgpu308; MODELS=0
+NODE=watgpu308; MODELS=0; ALL=0
 for a in "$@"; do
   case "$a" in
     --models) MODELS=1 ;;
+    all|--all) ALL=1 ;;
     watgpu*)  NODE="$a" ;;
   esac
 done
 
-echo "===== $NODE @ $(date -u +%FT%TZ) ====="
+# Reachability for us (school_group): 308 is ours via SCHOOL; vision nodes preempt us; rest = preemptible ALL.
+reach() { case "$1" in
+  watgpu308) echo "ours/SCHOOL" ;;
+  watgpu208|watgpu1008) echo "vision/PREEMPTS-us" ;;
+  *) echo "ALL/preemptible" ;;
+esac; }
 
-# GPU/CPU/mem from sresources (main row; sub-rows are per-sponsor GRES)
+if [ "$ALL" = 1 ]; then
+  echo "===== WatGPU cluster @ $(date -u +%FT%TZ) ====="
+  printf "%-11s %-14s %7s  %9s  %-18s %s\n" NODE STATE GPUfree CPUfree REACH ""
+  sresources 2>/dev/null | awk '/^watgpu/{print $1,$2,$4,$6,$12}' | while read -r n st gtot gfree cpuf; do
+    flag="🔴"; [ "${gfree:-0}" -gt 0 ] 2>/dev/null && flag="🟢"
+    case "$st" in *DRAIN*|*DOWN*|*DRNG*) flag="⚪" ;; esac
+    printf "%-11s %-14s %4s/%-2s  %9s  %-18s %s\n" "$n" "$st" "${gfree:-?}" "${gtot:-?}" "${cpuf:-?}" "$(reach "$n")" "$flag"
+  done
+  echo "(🟢 has free GPU · 🔴 full · ⚪ drain/down · only ours/SCHOOL=308 is reliably holdable; ALL=preemptible; vision preempts us)"
+  exit 0
+fi
+
+echo "===== $NODE @ $(date -u +%FT%TZ) ($(reach "$NODE")) ====="
 read -r st gtot galloc gfree memf cput cpualloc cpufree < <(
   sresources 2>/dev/null | awk -v n="$NODE" '$1==n{print $2,$4,$5,$6,$9,$10,$11,$12; exit}'
 )
