@@ -32,10 +32,14 @@ echo "== [3/6] prime-rl's own deps submodules (NOT --recursive: avoids private c
 git -C "$FORK" submodule update --init -- \
   deps/verifiers deps/renderers deps/research-environments deps/pydantic-config
 
-echo "== [4/6] venv (py3.12) + uv sync (core; no --all-extras → no flash-attn/envs) =="
+echo "== [4/6] venv (py3.12) + uv sync (+flash-attn extra) =="
 cd "$FORK"
 uv venv --python 3.12
-uv sync
+# flash-attn is a PREBUILT wheel (cu128/torch2.11/cp312 → matches our torch); no CUDA build.
+# Required even though we run attn=sdpa: prime_rl's model registry imports ring_flash_attn ->
+# flash_attn unconditionally at module load. --extra flash-attn keeps the install minimal
+# (no --all-extras → skips the verifiers envs we don't need for the trainer-only smoke).
+uv sync --extra flash-attn
 
 echo "== [5/6] b1tel telemetry package (editable) =="
 uv pip install -e "$REPO/code/b1"
