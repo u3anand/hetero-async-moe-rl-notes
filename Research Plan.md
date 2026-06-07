@@ -20,9 +20,9 @@ That gap is real and load-bearing because **agentic RL rollout creates time-vary
 2. **Batch-synchronous long tail** — >90% of rollout runtime sits in the tail; the objective is *batch completion*, not per-request latency.
 3. **The downstream objective is the trainer, not a user** — what matters is **fresh complete trajectories per training deadline** (cf. [[RollArt]] SampleBuffer idle; [[Freshness-Aware-PER]] formalizes freshness on the algorithmic side), not request latency.
 
-So serving PD-autoscalers don't port unmodified — and **that** is the defensible novelty, not the autoscaling mechanism.
+So serving PD-autoscalers don't port unmodified — the wedge is the RL-specific adaptation, not the autoscaling mechanism itself.
 
-**No published work occupies this cell.** Each neighbor gives up at least one dimension:
+**How AutoPD-RL relates to existing work.** Each neighbor gives up at least one dimension:
 
 | Neighbor | ID | Has | Gives up (vs AutoPD-RL) |
 |---|---|---|---|
