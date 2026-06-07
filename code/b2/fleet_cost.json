@@ -1,0 +1,17 @@
+{
+  "_comment": "Per-GPU $/hr and fleet sizing for the B2 $/token / cost-at-SLO accounting (Initial Plan 2, Q2). 'fast' = RTX 6000 Ada / L40S tier on watgpu308; 'slow' = RTX A6000 (Ampere). usd_per_hr are representative cloud list prices (placeholders — refine with the price source you cite). 'count' is the simulated fleet mix; the all-fast reference re-sizes a fast-only fleet automatically.",
+  "fast": {
+    "tier": "fast",
+    "gpu": "RTX 6000 Ada / L40S",
+    "usd_per_hr": 1.30,
+    "vram_gb": 48,
+    "count": 2
+  },
+  "slow": {
+    "tier": "slow",
+    "gpu": "RTX A6000",
+    "usd_per_hr": 0.80,
+    "vram_gb": 48,
+    "count": 4
+  }
+}

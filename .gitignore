@@ -26,6 +26,9 @@ code/b2/**/*.jsonl
 *-*.out
 *-*.err
 
+# Paper PDFs are kept local (large binaries); only the markdown notes are tracked
+**/PDFs/
+
 # Obsidian app/workspace/plugin state — keep the dir, ignore its contents
 .obsidian/*
 !.obsidian/.gitkeep

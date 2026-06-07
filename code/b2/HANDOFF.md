@@ -12,7 +12,9 @@ Serve a fixed **MoE** model (OLMoE) on the heterogeneous **watgpu308** node, rep
 2. `Initial Plan 2.md` (vault root) — the gated B2 plan (steps 0–7, Q1–Q7, instrumentation, definition of done).
 3. `code/b2/RUNBOOK.md` — the ordered commands (Track A laptop + Track B cluster).
 4. `Benchmark Comparison.md` (vault root) — B1 vs B2 side by side (why B2 is ~⅓ the lift).
-5. Anchor papers (`papers/`): [[Toward-Efficient-MoE-Inference]] (Expert Buffering = the reactive-cache idea we build on), [[Aurora]] + [[MegaScale-Infer]] (static hetero placement — the boundary), [[SwapMoE]].
+5. Anchor papers (`papers/`): **[[GEM]]** (THE closest neighbor — read its carve-out first), [[HarMoEny]] (closest dynamic neighbor), [[Toward-Efficient-MoE-Inference]] (Expert Buffering = the reactive-cache idea we build on), [[Aurora]] + [[MegaScale-Infer]] (static hetero placement — the boundary), [[SwapMoE]].
+
+**The novelty fence (memorize this — reviewers throw GEM/Aurora/HarMoEny darts):** existing work is (i) *static/profiled* hetero mapping (GEM, Aurora — no online adaptation, one-expert-one-GPU), (ii) *homogeneous* online redistribution/replication (HarMoEny, CRAFT, PROBE — no tier-speed model), or (iii) *memory-tier* caching (Expert Buffering, SwapMoE — GPU↔CPU). **TierShift = online tier-aware placement + migration + replicate-and-split across a 2.4–4× compute gap, under p99-SLO + $/token, with a migration-timescale regime map.** Never say "nobody has done hetero expert mapping" — GEM did (statically).
 
 ## What success means — the 3 questions B2 must answer
 1. **Locality (Q1/Q5):** does the hot expert set stay put long enough to cache? (flat/random → project dies here.)
@@ -21,13 +23,18 @@ Serve a fixed **MoE** model (OLMoE) on the heterogeneous **watgpu308** node, rep
 
 Plus the **objective metrics** layered on the offline sim: **p99 latency / SLO-attainment** and **$/token** per placement config (not just straggler/throughput).
 
+**The number that settles the GEM dart:** the **temporal-token-mass fraction** (GEM's consistent-vs-temporal taxonomy — consistent experts GEM places statically; *temporal* ones are the headroom of online over static). The **GEM-style → reactive+split** gap and this fraction together say whether the contribution exists. Baselines now include **GEM-style** (static speed-aware) and **HarMoEny-style** (homogeneous dynamic) — both required, not optional.
+
 ## Decisions already locked (don't re-litigate)
 - **Serving only** — no RL, no trainer, no udocker reward. That's B1.
 - **BF16 for the whole OLMoE phase.** The slow tier (A6000, Ampere) has *no* FP8 hardware, and routing/hot-set capture is precision-independent. FP8 is measured *only* as a tier-gap micro-bench (FP8-Ada vs BF16-Ampere widens the gap ~2.4×→~4×, which helps the thesis). Full FP8 serving waits for the Qwen3-30B-A3B phase.
 - **vLLM**, not SGLang — the repo already forks it (`code/forks/vllm`) and the expert-logging hook is **the same one B1-A2 needs**, so it's shared, not wasted. Revisit SGLang only at the real cross-tier-EP-*serving* phase (its EPLB is the comparison point then).
 - **Reactive cache, NOT workload prediction.** The controller reacts to measured recent expert load (free from the router). No forecasting. This is what makes it workload-agnostic / usable as a reference.
-- **Most of B2 is single-GPU capture + 2 micro-benches + offline simulation.** Live cross-tier EP serving (B7) is the *last, optional* validation gate — NOT a prerequisite for the headline charts. (Routing is hardware-independent, so capture on one GPU is valid.)
-- **Objective = hold p99 SLO at min $/token on a mixed fleet** (cost-first), with straggler/throughput as the mechanism beneath it.
+- **Most of B2 is single-GPU capture + 2 micro-benches + offline simulation.** But **live cross-tier EP validation (B7) is now REQUIRED** (not optional) — one real EP run must match the simulated straggler/p99 within tolerance, or it's a "cute simulator." (Full online *migration* live stays deferred to the controller phase.)
+- **Routing granularity is an axis, per GEM:** Qwen3-30B-A3B routes near-uniformly → GEM got only 1.5% there. Skew lives in **coarser** models. Capture spans **Mixtral-8x7B (sharp) / OLMoE-64e (mid) / Qwen3-128e (flat)**; **don't headline Qwen3** as the evidence — the coarse model carries "skew exists."
+- **Capture hygiene (avoid reviewer-sniping):** log **prefill/decode separately** (`phase` field), keep **deterministic** settings, and **sweep window size** reporting dwell/churn/temporal-mass sensitivity — never one cherry-picked window.
+-
+
 
 ## Critical path (the bottleneck is code, not the node)
 B2 has plans + runbook + scaffolding, but **no implementation yet**. Ordered:
