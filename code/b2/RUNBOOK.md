@@ -40,10 +40,11 @@ index→tier map; pick one **Ada** (fast) and one **A6000** (slow) CUDA index. *
 
 **B1 — env** (`salloc -p SCHOOL -w watgpu308 --gres=gpu:2 --cpus-per-task=8 --mem=64G -t 7:00:00`):
 ```bash
-bash code/b2/setup.sh        # conda env + vLLM fork + OLMoE download (no udocker, no prime-rl)
+bash code/b2/setup.sh                  # uv venv (code/b2/.venv) + vLLM fork + b2tel + OLMoE
+source code/b2/.venv/bin/activate      # activate before the B2–B6 commands below
 ```
 **Gate 1:** vLLM imports on a compute node; `vllm serve allenai/OLMoE-1B-7B-0924-Instruct
---dtype bfloat16` answers one request on the Ada index.
+--dtype bfloat16 --enforce-eager` answers one request on the Ada index.
 
 **B2 — trace build** (CPU, ∥ B1):
 ```bash
