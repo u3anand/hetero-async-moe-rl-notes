@@ -4,17 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "a6310a69c7d9bdfb",
+        "id": "b152143fc80be8d5",
         "type": "tabs",
         "children": [
           {
-            "id": "3f798ea3ecf1c079",
+            "id": "c9f2c797f81983d9",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Graph view"
+              "type": "markdown",
+              "state": {
+                "file": "code/b2/HANDOFF.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "HANDOFF"
             }
           }
         ]
@@ -150,21 +154,21 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Untitled.base",
+                "file": "code/b2/HANDOFF.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of Untitled"
+              "title": "Outline of HANDOFF"
             }
           }
-        ]
+        ],
+        "currentTab": 4
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -179,44 +183,44 @@
       "realclaudian:Open Claudian": false
     }
   },
-  "active": "3f798ea3ecf1c079",
+  "active": "c9f2c797f81983d9",
   "lastOpenFiles": [
-    "code/forks/vllm/docs/models/extensions/instanttensor.md",
-    "WatGPU.md",
-    "code/forks/mini-swe-agent/src/minisweagent/environments/__pycache__/local.cpython-314.pyc",
-    "code/forks/mini-swe-agent/tests/environments/__pycache__/test_init.cpython-314-pytest-9.0.3.pyc",
-    "code/forks/mini-swe-agent/src/minisweagent/utils/__pycache__/serialize.cpython-314.pyc",
-    "code/forks/mini-swe-agent/src/minisweagent/__pycache__/exceptions.cpython-314.pyc",
-    "code/forks/mini-swe-agent/src/minisweagent/environments/__pycache__/udocker.cpython-314.pyc",
-    "code/forks/mini-swe-agent/src/minisweagent/environments/__pycache__/__init__.cpython-314.pyc",
-    "code/forks/mini-swe-agent/src/minisweagent/environments/__pycache__",
-    "code/forks/mini-swe-agent/tests/environments/__pycache__/test_udocker.cpython-314-pytest-9.0.3.pyc",
-    "code/forks/mini-swe-agent/tests/environments/__pycache__/__init__.cpython-314.pyc",
-    "code/forks/mini-swe-agent/tests/environments/__pycache__",
-    "AGENTS.md",
-    "code/forks/mini-swe-agent/src/minisweagent/run/README.md",
-    "code/forks/mini-swe-agent/src/minisweagent/models/README.md",
-    "code/forks/mini-swe-agent/src/minisweagent/environments/README.md",
-    "code/forks/mini-swe-agent/src/minisweagent/config/README.md",
-    "code/forks/mini-swe-agent/src/minisweagent/agents/README.md",
-    "code/forks/mini-swe-agent/docs/reference/run/swebench_single.md",
-    "code/forks/mini-swe-agent/docs/reference/run/swebench.md",
-    "code/forks/mini-swe-agent/docs/reference/run/programbench.md",
-    "code/forks/mini-swe-agent/docs/reference/run/mini_extra.md",
-    "code/forks/mini-swe-agent/docs/reference/run/mini.md",
-    "code/forks/mini-swe-agent/docs/reference/run/inspector.md",
-    "code/forks/mini-swe-agent/docs/reference/run/hello_world.md",
-    "code/forks/mini-swe-agent/docs/reference/run/config.md",
-    "code/forks/mini-swe-agent/docs/reference/models/utils.md",
-    "code/forks/mini-swe-agent/docs/reference/models/test_models.md",
-    "code/forks/mini-swe-agent/docs/reference/models/requesty.md",
-    "code/forks/mini-swe-agent/docs/reference/models/portkey_response.md",
-    "code/forks/mini-swe-agent/docs/reference/models/portkey.md",
-    "code/forks/mini-swe-agent/docs/reference/models/overview.md",
-    "code/forks/mini-swe-agent/docs/reference/models/openrouter.md",
-    "code/forks/mini-swe-agent/docs/reference/models/litellm_response_toolcall.md",
-    "code/forks/mini-swe-agent/docs/reference/models/litellm.md",
-    "code/forks/mini-swe-agent/docs/reference/models/extra.md",
+    "Initial Plan 2.md",
+    "Direction Validation.md",
+    "code/b2/HANDOFF.md",
+    "code/b2/HANDOFF.md.tmp.16142.76a07bb80e82",
+    "Initial Plan 2.md.tmp.16142.a0aad5b4e681",
+    "papers/SwapMoE.md",
+    "papers/Toward-Efficient-MoE-Inference.md",
+    "papers/PDFs/moe-serving-systems/neurips2024__toward-efficient-moe-inference.pdf",
+    "papers/PDFs/moe-serving-systems/2308.15030__swapmoe.pdf",
+    "code/b2/README.md",
+    "code/b2/RUNBOOK.md",
+    "code/b2/RUNBOOK.md.tmp.16142.8e2f31fccaee",
+    "Benchmark Comparison.md",
+    "code/b2/src/b2tel",
+    "code/b2/slurm/check-node.sh",
+    "code/b2/traces",
+    "code/b2/src",
+    "code/b2/slurm",
+    "Research Plan 2.md",
+    "Research Plan.md",
+    "Transformer.md",
+    "papers/HexGen-2.md",
+    "papers/Helix.md",
+    "papers/HeterMoE.md",
+    "papers/MegaScale-Infer.md",
+    "papers/Aurora.md",
+    "MoE Architecture.md",
+    "MoE vs Dense Workload.md",
+    "Initial Plan.md",
+    "README.md",
+    "papers/Arrow.md",
+    "papers/DistServe.md",
+    "papers/DOPD.md",
+    "papers/TokenScale.md",
+    "papers/RollPacker.md",
+    "papers/Splitwise.md",
     "code/forks/mini-swe-agent/docs/assets/mini2.png",
     "code/forks/mini-swe-agent/docs/assets/mini_square.svg",
     "code/forks/mini-swe-agent/docs/assets/mini.png",

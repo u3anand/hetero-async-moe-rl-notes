@@ -1,12 +1,12 @@
 ---
 paper_id: "arxiv:2504.03871"
-title: "HeterMoE"
+title: "HeterMoE: Efficient Training of Mixture-of-Experts Models on Heterogeneous GPUs"
 year: 2025
-topic: "moe-training-systems"
-status: "unread"
-priority: "systems-core"
-pdf: "PDFs/moe-training-systems/2504.03871__hetermoe.pdf"
-source_url: "https://arxiv.org/pdf/2504.03871.pdf"
+topic: "moe-serving-systems"
+status: "read"
+priority: "perimeter"
+pdf: "PDFs/moe-serving-systems/2504.03871__hetermoe.pdf"
+source_url: "https://arxiv.org/abs/2504.03871"
 aliases:
   - "2504.03871"
   - "HeterMoE"
@@ -14,25 +14,31 @@ aliases:
 
 # HeterMoE
 
-[PDF](2504.03871__hetermoe.pdf) · [Source](https://arxiv.org/pdf/2504.03871.pdf)
+[PDF](PDFs/moe-serving-systems/2504.03871__hetermoe.pdf) · [Source](https://arxiv.org/abs/2504.03871)
 
-## Why This Paper Matters
-_TODO_
+> **Perimeter note (candidate MoE-hetero direction).** Owns "attention/expert disaggregation
+> across GPU generations" — but for **training**, not serving. Defines the split that
+> [[MegaScale-Infer]] later took to serving; cite to show that split is spoken-for.
 
-## Systems Lens
-- Workload:
-- Bottleneck:
-- Scheduling / placement:
-- Communication:
-- Heterogeneous cluster angle:
-- Relevance to MoE RL / SWE-RL:
+## TL;DR
+**Zebra Parallelism**: assign attention blocks to **newer** GPUs and expert modules to **older**
+GPUs (newer GPUs win on attention; older are still fine for experts), overlapping micro-batches in
+a zigzag to hide bubbles. **Asymmetric Expert Assignment** ("gather and squeeze") offloads select
+experts to attention GPUs to fill idle time. Up to **2.3×** over existing MoE training systems,
+1.4× over an optimally-balanced hetero baseline; holds 95% throughput with half an A40 cluster
+swapped to V100.
 
-## Key Claims
-_TODO_
+## Why This Matters (perimeter)
+- **Training only** — verbatim: *"we present HeterMoE to efficiently train MoE models with
+  heterogeneous GPUs."* Inference/serving **absent from scope and future work**.
+- **Static/offline** expert assignment (profile once → fixed per-layer assignment). No dynamic
+  rebalancing.
+- Take-away for the wedge: the attention/expert-split-across-tiers idea is **proven and claimed**
+  (training by HeterMoE, serving by MegaScale-Infer). The candidate direction must **not** re-pitch
+  that split — its novelty has to be the **online/dynamic** layer neither does.
 
-## Caveats
-_TODO_
+## Heterogeneity & Results
+A40/V100, L40S/T4 on-prem; simulated 200 Gbps AWS. ≤32K seq len.
 
 ## Links
-- [[MoE Training Systems]]
-- [[MoE vs Dense Workload]]
+- [[MegaScale-Infer]] (same split, serving) · [[Aurora]] · [[Research Plan]]

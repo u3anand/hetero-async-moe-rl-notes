@@ -1,61 +1,51 @@
 # Papers Index
 
-Lookup surface for downloaded paper PDFs and scaffold notes.
+Curated literature for **AutoPD-RL** — automatic prefill/decode allocation for agentic RL rollouts on heterogeneous GPUs. See [[Direction Validation]] for the verified landscape and [[Research Plan]] for the thesis.
 
-## RL Systems
+> Curated 2026-06-04. The previous MoE-internals-heavy set (DeepSpeed-MoE, FastMoE, Tutel, HeterMoE, …) was removed when the project pivoted away from the MoE-hetero-MILP thesis — recoverable from git history if needed.
 
-- [[AReaL-Hex|AReaL-Hex]] — 2025 — [PDF](2511.00796__areal-hex.pdf) — unread
-- [[RollArt|RollArt]] — 2025 — [PDF](2512.22560__rollart.pdf) — unread
-- [[JigsawRL|JigsawRL]] — 2026 — [PDF](2604.23838__jigsawrl.pdf) — unread
-- [[AReaL|AReaL]] — 2025 — [PDF](2505.24298__areal.pdf) — unread
-- [[HybridFlow veRL|HybridFlow veRL]] — 2024 — [PDF](2409.19256__hybridflow-verl.pdf) — unread
-- [[OpenRLHF|OpenRLHF]] — 2024 — [PDF](2405.11143__openrlhf.pdf) — unread
-- [[LlamaRL|LlamaRL]] — 2025 — [PDF](2505.24034__llamarl.pdf) — unread
-- [[Each Prompt Matters|Each Prompt Matters]] — 2025 — [PDF](2512.07710__each-prompt-matters.pdf) — unread
+## Agentic RL Systems — the wedge's direct neighbors
 
-## MoE RL Routing / Stability
+- [[RollArt]] — 2025 — arxiv:2512.22560 — **baseline-to-beat; names our gap (manual PD config = future work)**
+- [[HexAGenT]] — 2026 — arxiv:2605.16637 — **novelty boundary**: PD routing over *fixed* pools, serving SLOs
+- [[Heddle]] — 2026 — arxiv:2603.28101 — **novelty boundary**: trajectory scheduling; PD-sizing explicitly *orthogonal* (NOT a threat)
+- [[ROSE]] — 2026 — arxiv:2605.06534 — elastic rollout on spare serving GPUs (different lever)
+- [[RollPacker]] — 2025 — arxiv:2509.21009 — long-tail via tail batching (batch-round granularity)
+- [[EARL]] — 2025 — arxiv:2510.05943 — dynamic parallelism under long/dynamic context
+- [[ROLL]] — 2025 — arxiv:2506.06122 — base library; `AutoDeviceMapping` = the manual knob we automate
+- [[Freshness-Aware-PER]] — 2026 — arxiv:2604.16918 — freshness objective (algorithmic, not resource)
+- [[RLix]] — 2025 — github — multi-job GPU sharing (adjacent axis)
 
-- [[R3|R3]] — 2025 — arxiv:2510.11370 — unread — within-replica router replay
-- [[Router-Aware IS|Router-Aware IS]] — 2025 — arxiv:2510.23027 — unread — router-logit-rescaled IS
-- [[ReLibra|ReLibra]] — 2026 — arxiv:2605.08639 — unread — **blocker for [[Research Plan]]**
+## Serving-side Prefill/Decode Disaggregation — prior art to distinguish from
 
-## SWE-RL Workloads
+**Static / founding:**
+- [[DistServe]] — 2024 — arxiv:2401.09670 — offline PD placement search, SLO objective
+- [[Splitwise]] — 2023 — arxiv:2311.18677 — offline pool sizing + limited dynamic mixed pool
 
-- [[SWE-RL|SWE-RL]] — 2025 — [PDF](2502.18449__swe-rl.pdf) — unread
-- [[Self-play SWE-RL|Self-play SWE-RL]] — 2025 — [PDF](2512.18552__self-play-swe-rl.pdf) — unread
-- [[Agent-RLVR|Agent-RLVR]] — 2025 — [PDF](2506.11425__agent-rlvr.pdf) — unread
-- [[ReVeal|ReVeal]] — 2025 — [PDF](2506.11442__reveal-self-evolving-code-agents.pdf) — unread
+**Dynamic PD autoscaling (the "mechanism is already solved for serving" cluster):**
+- [[TokenScale]] — 2025 — arxiv:2512.03416 — token-velocity autoscaling + convertible decoders
+- [[DOPD]] — 2025 — arxiv:2511.20982 — real-time-load-driven dynamic P/D ratio
+- [[Arrow]] — 2025 — arxiv:2505.11916 — stateless instances + elastic PD pools
+- [[DynaServe]] — 2025 — arxiv:2504.09285 — per-batch P:D ratio / batch / context tuning
 
-## MoE Training Systems
+## MoE Serving on Heterogeneous GPUs — candidate-pivot literature (exploratory, NOT AutoPD-RL)
 
-- [[Lazarus|Lazarus]] — 2024 — [PDF](2407.04656__lazarus.pdf) — unread
-- [[DeepSpeed-MoE|DeepSpeed-MoE]] — 2022 — [PDF](2201.05596__deepspeed-moe.pdf) — unread
-- [[FastMoE|FastMoE]] — 2021 — [PDF](2103.13262__fastmoe.pdf) — unread
-- [[SE-MoE|SE-MoE]] — 2022 — [PDF](2205.10034__se-moe.pdf) — unread
-- [[HetuMoE|HetuMoE]] — 2022 — [PDF](2203.14685__hetumoe.pdf) — unread
-- [[Tutel|Tutel]] — 2022 — [PDF](2206.03382__tutel.pdf) — unread
-- [[MegaBlocks|MegaBlocks]] — 2022 — [PDF](2211.15841__megablocks.pdf) — unread
-- [[DeepSpeed-TED|DeepSpeed-TED]] — 2023 — [PDF](2303.06318__deepspeed-ted.pdf) — unread
-- [[HEXA-MoE|HEXA-MoE]] — 2024 — [PDF](2411.01288__hexa-moe.pdf) — unread
-- [[HeterMoE|HeterMoE]] — 2025 — [PDF](2504.03871__hetermoe.pdf) — unread
-- [[FlashMoE|FlashMoE]] — 2025 — [PDF](2506.04667__flashmoe.pdf) — unread
-- [[ElasticMoE|ElasticMoE]] — 2025 — [PDF](2510.02613__elasticmoe.pdf) — unread
-- [[LAER-MoE|LAER-MoE]] — 2026 — [PDF](2602.11686__laer-moe.pdf) — unread
+> Added 2026-06-07 while scoping a possible pivot toward **online expert
+> placement/replication/migration for MoE serving on heterogeneous GPU tiers** (Benson's
+> inference-over-RL steer). These are *boundaries to carve against*, not AutoPD-RL neighbors. The
+> static cell is taken; the surviving wedge is the **online/non-stationary** axis both papers punt on.
 
-## MoE Inference Systems
+**The occupied cells (boundaries to carve against):**
+- [[Aurora]] — 2024 — arxiv:2410.17043 — **static-core owner**: optimal hetero expert placement + comm scheduling (colocated-on-hetero = NP-hard). Offline only; names "online dynamic rebalancing" as the gap.
+- [[MegaScale-Infer]] — 2025 — arxiv:2504.02263 — **production heavyweight (ByteDance, ~10k GPU)**: attention/expert disaggregation across H20+L40S tiers. Static placement + greedy historical hot-expert replication; no online migration.
 
-- [[Fiddler|Fiddler]] — 2024 — [PDF](2402.07033__fiddler.pdf) — unread
-- [[Not All Models Suit Expert Offloading|Not All Models Suit Expert Offloading]] — 2025 — [PDF](2505.16056__not-all-models-suit-expert-offloading.pdf) — unread
-- [[HarMoEny|HarMoEny]] — 2025 — [PDF](2506.12417__harmony.pdf) — unread
-- [[MoE-SpeQ|MoE-SpeQ]] — 2025 — [PDF](2511.14102__moe-speq.pdf) — unread
-- [[Context-Aware MoE CXL-NDP|Context-Aware MoE CXL-NDP]] — 2025 — [PDF](2512.04476__context-aware-moe-cxl-ndp.pdf) — unread
-- [[Predictive Prefetching and Expert Replication|Predictive Prefetching and Expert Replication]] — 2026 — [PDF](2605.11537__predictive-prefetching-expert-replication.pdf) — unread
+**The perimeter (fences the wedge — none occupy MoE × hetero × serving × online):**
+- [[HeterMoE]] — 2025 — arxiv:2504.03871 — same attention/expert split, but **training**; static. Serving absent from scope.
+- [[Helix]] — 2024 — arxiv:2406.01566 — hetero serving via **max-flow + MILP**, but **dense** (LLaMA); placement static (run once).
+- [[HexGen-2]] — 2025 — arxiv:2502.07903 — **PD-disaggregated** hetero serving, but **dense** (OPT/Llama-2); offline placement-style.
 
-## LLM Serving Systems
+**The mechanism anchors (the reactive-cache idea TierShift builds on — Layer 0):**
+- [[Toward-Efficient-MoE-Inference]] — NeurIPS'24 — **Expert Buffering**: reactive cache of hot experts, exploits temporal locality. *Reacts, doesn't predict* — resolves "online prediction is weird." But memory-caching GPU↔CPU (stall-on-miss), not compute-tier load-balancing. The naive 2-GPU port = TierShift's Layer-1 baseline.
+- [[SwapMoE]] — 2024 — arxiv:2308.15030 — dynamic resident "Virtual Experts" + tunable memory, but **approximate** (accuracy drop) + single-device. The "approximate" corner TierShift declines.
 
-- [[vLLM PagedAttention|vLLM PagedAttention]] — 2023 — [PDF](2309.06180__vllm-pagedattention.pdf) — unread
-- [[SGLang RadixAttention|SGLang RadixAttention]] — 2023 — [PDF](2312.07104__sglang-radixattention.pdf) — unread
-- [[Splitwise|Splitwise]] — 2023 — [PDF](2311.18677__splitwise.pdf) — unread
-- [[DistServe|DistServe]] — 2024 — [PDF](2401.09670__distserve.pdf) — unread
-- [[Mooncake|Mooncake]] — 2024 — [PDF](2407.00079__mooncake.pdf) — unread
-- [[TaiChi|TaiChi]] — 2025 — [PDF](2508.01989__taichi.pdf) — unread
+**The opening (post step-(c) refinement):** Premise *confirmed* — expert hotness is non-stationary, domain/phase-dependent, measured on ShareGPT/LMSYS with Mixtral/Phi-3.5 (Imbalance Ratio swings 1.43–2.28). **But** that maturity means a dynamic crowd already exploits it on **homogeneous** HW (predictive prefetch / replication / load-forecasting): "Prediction Is All MoE Needs" (2404.16914), "Patterns behind Chaos" (2510.05497), PROBE (2602.00509), CRAFT (2603.28768), HarMoEny (2506.12417), MoE-Infinity (2401.14361). So the surviving cell narrows to: **online expert placement + *migration across heterogeneous tiers* under a tier-cost model** — homogeneous-dynamic crowd makes "where" trivial; Aurora decides "where" only offline. Novel *characterization* = the **tier × non-stationarity interaction**, not non-stationarity alone.
