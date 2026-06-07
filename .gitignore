@@ -25,3 +25,7 @@ code/b2/**/*.jsonl
 **/.udocker/
 *-*.out
 *-*.err
+
+# Obsidian app/workspace/plugin state — keep the dir, ignore its contents
+.obsidian/*
+!.obsidian/.gitkeep
