@@ -54,26 +54,31 @@ python code/b2/src/b2tel/make_trace.py --chat sharegpt,lmsys --code humaneval --
 
 **B3 — expert-load capture** (GPU, 1 Ada) — *requires Track A*:
 ```bash
-vllm serve allenai/OLMoE-1B-7B-0924-Instruct --dtype bfloat16 \
-  --port 8000 &   # fork build, gate hook on, B2TEL_OUT=/u3/u3anand/b2/runs/capture/<ts>
-python code/b2/src/b2tel/replay.py --trace /u3/u3anand/b2/traces/mixed.jsonl --url :8000
+TS=$(date +%Y%m%dT%H%M%S); CAP=/u3/u3anand/b2/runs/capture/$TS
+# gate hook is env-gated; --enforce-eager is REQUIRED (hook no-ops under torch.compile)
+VLLM_B2_EXPERT_LOG_DIR=$CAP VLLM_B2_WINDOW_S=1.0 \
+  vllm serve allenai/OLMoE-1B-7B-0924-Instruct --dtype bfloat16 \
+  --enforce-eager --port 8000 &
+python -m b2tel.replay --trace /u3/u3anand/b2/traces/mixed.jsonl --url :8000 --rate 8 --out $CAP
+# expert.<pid>.jsonl (hook) + requests.jsonl + segments.jsonl (replay) all land in $CAP
 ```
 **Gate 3 (headline):** `expert.jsonl` populated; **imbalance ratio visibly shifts across segments.**
 If flat → expert load is stationary → B2 = negative result, reconsider direction.
 
 **B4 — tier micro-bench** (1 Ada + 1 A6000):
 ```bash
-python code/b2/src/b2tel/tier_bench.py --fast <ada_idx> --slow <a6000_idx> \
+python -m b2tel.tier_bench --fast <ada_idx> --slow <a6000_idx> \
   --batch 1,8,32,128 --out /u3/u3anand/b2/runs/tier_cost.json
 ```
-Times one expert FFN (and a small all-to-all) per tier. **Gate 4:** fast:slow tokens/s ratio recorded
+Times one expert FFN per tier. **Gate 4:** fast:slow tokens/s ratio recorded
 per batch size (expect ≥2.4×; larger if FP8-Ada vs BF16-Ampere).
 
 **B5 — migration micro-bench** (1 Ada + 1 A6000) — *the kill-test*:
 ```bash
-python code/b2/src/b2tel/migrate_bench.py --fast <ada_idx> --slow <a6000_idx> \
-  --capture /u3/u3anand/b2/runs/capture/<ts>/expert.jsonl \
+python -m b2tel.migrate_bench --fast <ada_idx> --slow <a6000_idx> \
+  --capture $CAP \
   --out /u3/u3anand/b2/runs/migration_cost.json
+# (no node? add --no-gpu for the analytic Gen4 estimate — turnover still comes from $CAP)
 ```
 Measures expert-weight bytes + PCIe Ada↔A6000 transfer ms; derives hot-set turnover period from the
 capture. **Gate 5 (Q3):** `migration_ms` vs `turnover_period` recorded → **migrate viable iff
@@ -81,16 +86,21 @@ migration ≪ turnover; else replication-only.** This decision shapes the contro
 
 **B6 — offline simulate + charts** (CPU):
 ```bash
-python -m b2tel.simulate --capture .../expert.jsonl --tier-cost .../tier_cost.json \
-  --migration .../migration_cost.json --fleet-cost code/b2/fleet_cost.json \
-  --slo-p99-ms <target> \
-  --configs static-balanced,static-hot-on-fast,reactive-LRU-port,reactive+split,oracle-dynamic
-python -m b2tel.charts --runs /u3/u3anand/b2/runs --out code/b2/charts
+python -m b2tel.simulate --capture $CAP --segments $CAP/segments.jsonl \
+  --tier-cost /u3/u3anand/b2/runs/tier_cost.json \
+  --migration /u3/u3anand/b2/runs/migration_cost.json --fleet-cost code/b2/fleet_cost.json \
+  --batch 8 --cap-fast-frac 0.25 --slo-p99-ms 0 \
+  --out /u3/u3anand/b2/runs/sim.json     # all 8 configs always run; --slo-p99-ms 0 = auto (1.5x oracle)
+python -m b2tel.charts --capture $CAP --segments $CAP/segments.jsonl \
+  --sim /u3/u3anand/b2/runs/sim.json --migration /u3/u3anand/b2/runs/migration_cost.json \
+  --out code/b2/charts
 ```
 Each config is scored on the **objective**: **p99 latency / SLO-attainment** and **$/token** (from
 `fleet_cost.json`), not just straggler. **Gate 6:** under drift, static violates the p99 SLO while
 reactive holds it; **$/token-at-SLO beats the all-fast-GPU reference**; the **reactive-LRU-port →
-reactive+split** headroom (make-or-break) is non-trivial; Q1–Q7 charts render.
+reactive+split** headroom (make-or-break) is non-trivial; Q1–Q7 charts render. Note the **cache budget
+`--cap-fast-frac`** is the key knob: the drift advantage only appears when it's smaller than the union
+of per-domain hot sets — sweep it.
 
 **B7 — live EP validation** *(optional; 1 Ada + 1 A6000)*: serve OLMoE EP across both tiers under
 `static-balanced`; sample `system.jsonl`; confirm measured per-tier straggler ≈ simulated. **Gate 7:**
@@ -111,7 +121,10 @@ turnover-period, static↔oracle gap) to a new `B2 run log.md` note in the vault
 
 ## Manifests checklist (build before a run)
 - [x] `slurm/check-node.sh` (reused from B1, cluster-wide)
-- [ ] `setup.sh` — conda env + vLLM fork + OLMoE download (simpler than B1's: no udocker/prime-rl)
-- [ ] `src/b2tel/{telemetry,make_trace,replay,tier_bench,migrate_bench,simulate,charts}.py`
-- [ ] Track A vLLM gate hook merged (gates B3 only; micro-benches don't need it)
-- [ ] `pins.txt` — pin the vLLM commit
+- [x] `setup.sh` — conda env + vLLM fork + OLMoE download (simpler than B1's: no udocker/prime-rl)
+- [x] `pyproject.toml` (numpy/matplotlib/orjson; `[trace]` extra pulls `datasets`)
+- [x] `src/b2tel/{telemetry,analysis,make_trace,replay,tier_bench,migrate_bench,simulate,charts}.py`
+- [x] `fleet_cost.json` ($/hr + fleet mix for the $/token accounting)
+- [x] Track A vLLM gate hook written (`expert_load_logger.py` + 1-line call in `olmoe.py`) — **not yet pushed**: `cd code/forks/vllm && git checkout -b b2-expert-telemetry && commit + push`, then bump submodule + `pins.txt`
+- [ ] `pins.txt` — pin the vLLM commit (placeholder branch in place; fill commit after push)
+- [ ] Live B7 `system.jsonl` sampler (deferred — B7 is the last gate)

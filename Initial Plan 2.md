@@ -3,7 +3,9 @@
 The first runnable milestone of [[Research Plan 2]] (TierShift). Goal: **serve a fixed MoE on the heterogeneous node**, replay a **mixed, time-varying request trace**, and emit the Q1–Q7 telemetry that shows **expert hotness is non-stationary and interacts with tier heterogeneity** — and answer the **kill-question** (d
 oes the hot set churn slower than an expert can migrate over PCIe?). This is "make it serve + measure," not "build the controller." Hardware: [[WatGPU]]. First-milestone comparison vs B1: [[Benchmark Comparison]].
 
-OLMoE-1B-7B has **64 experts (8 active/token)** → enough experts to exhibit skew, and **fits one 46 GB card** → expert-load capture needs no multi-GPU plumbing. (MoE is now *central*, unlike B1 where it was incidental.) Later swap to **Qwen3-30B-A3B (128 experts)** for the claim that needs real cross-tier EP.
+OLMoE-1B-7B has **64 experts (8 active/token)** → enough experts to exhibit skew, and **fits one 46 GB card** → expert-load capture needs no multi-GPU plumbing. (MoE is now *central*, unlike B1 where it was incidental.)
+
+**Routing granularity is now an explicit axis of the benchmark — because [[GEM]] showed it decides whether there's any skew to exploit:** on **Qwen3-30B-A3B** (128 fine-grained experts) GEM got only **~1.5%**, due to *near-uniform routing*; the skew (and our whole premise) lives in **coarser-routing** models. So the capture spans three points: **Mixtral-8x7B** (8 experts, top-2 → sharpest skew; needs 2 cards / quant just to *log routing*), **OLMoE-64e** (mid), **Qwen3-30B-A3B** (128 → flattest, the stress-test for "is there anything here"). The regime map gets a *routing-granularity* dimension. **Do not pitch Qwen3-30B-A3B as the headline evidence** — it may be the *weakest* case; it's the scale-up/realism target, with the coarse model carrying the "skew exists" claim.
 
 ## The core design insight — characterize cheaply, validate later
 
@@ -23,14 +25,21 @@ Controlled comparison: **model + trace held constant; only the expert→tier ass
 | Config | Expert→tier rule | Layer / role |
 |---|---|---|
 | **static-balanced** | round-robin experts across Ada+A6000 | the naive EP default |
-| **static-hot-on-fast** | offline-optimal: hot experts (avg load) → Ada, cold → A6000 | the Aurora-style static optimum for the *average* mix |
-| **reactive-LRU-port** | each window, put the **recently**-hottest top-K on Ada (no future knowledge, no split) | **Layer 1** — "just copy Expert Buffering to two GPUs"; **the baseline we must beat** |
-| **reactive+split** | reactive-LRU **+ replicate the hottest across both tiers and split their tokens** | **Layer 2** — the contribution preview |
+| **static-avg-opt** | offline-optimal mapping for the *average* trace (hot→Ada, cold→A6000) | Aurora-style static optimum |
+| **GEM-style** | static **speed-aware** mapping (faster tier gets proportionally more load), one-expert-one-GPU, no online adaptation | **the closest static hetero baseline** — what we must beat to claim "online matters" |
+| **HarMoEny-style** | **homogeneous** dynamic token redistribution to under-utilized GPUs (no tier-speed term) | the closest *dynamic* baseline |
+| **CRAFT-style** | cost-aware replication, blind to tiers | reviewers will ask |
+| **reactive-LRU-port** | each window, put the **recently**-hottest top-K on Ada (no future, no split) | **Layer 1** — "just copy Expert Buffering to two GPUs" |
+| **reactive+split** | reactive-LRU **+ replicate the hottest across tiers and split tokens by speed** | **Layer 2** — the contribution preview |
 | **oracle-dynamic** | per-window optimal placement given *future* load | the ceiling everything chases |
 
 **Two gaps matter, not one:**
-- **static-hot-on-fast → oracle-dynamic** = the *total* win from going dynamic (motivates adapting at all).
-- **reactive-LRU-port → reactive+split** = **the make-or-break gap** — the headroom of the *contribution* over the naive cache-port. If this is ~0, TierShift is "just Expert Buffering ported" and there's no paper; if it's large, the replicate-split lever is load-bearing. B2 must size **both** gaps. (Live B7 confirms the simulated gaps on real hardware.)
+- **GEM-style (static, speed-aware) → reactive+split** = **the GEM gap** — the headroom of *online* over the best *static* hetero baseline. This is the number a reviewer demands; if ~0, "static (GEM) suffices" (a clean negative). **The win should come specifically from *temporal* experts** (see below) — GEM handles *consistent* ones statically.
+- **reactive-LRU-port → reactive+split** = **the make-or-break gap** — headroom of replicate-split over the naive cache-port. If ~0, TierShift is "just Expert Buffering ported."
+
+B2 must size **all three** gaps (static-avg→oracle, GEM→reactive+split, LRU-port→reactive+split). (Live B7 — now required — confirms them on real hardware.)
+
+**Adopt GEM's consistent/temporal expert taxonomy as a core metric.** Classify each expert per window as **consistent** (hot in ≳85% of windows — caught by a static average, so GEM already places it well) vs **temporal** (bursty — hot in only a fraction of windows, but heavy when active). **The fraction of hot-token mass that is *temporal* is, to first order, the headroom of online over static** — i.e. the ceiling on how much TierShift can beat GEM. Report it; it's the cleanest single number that says whether the contribution exists.
 
 ## GPU/CPU budget on watgpu308
 8× `schoolgpu` = 4 L40S + 2 RTX A6000 + 2 RTX 6000 Ada (46–48 GB, PCIe Gen4, **no NVLink**). Bring-up needs only **1 Ada + 1 A6000** (capture + micro-benches); the live EP validation (B7) uses 2–4. **No trainer, no rollout agent, no udocker reward** → CPU is not a bottleneck here (unlike B1). Grab the node `--exclusive` for clean telemetry anyway. PCIe-not-NVLink is *the point* — it makes migration cost real and measurable (Q3).
@@ -57,7 +66,7 @@ Controlled comparison: **model + trace held constant; only the expert→tier ass
 
 **6 — Offline simulate + charts** (CPU): join `expert.jsonl` × tier-cost (step 4) × migration-cost (step 5) → simulate the configs. Score each on the **objective**, not just straggler: derive **p99 token latency** (from per-tier finish times under each placement) and **$/token** (assign a $/hr to each tier via a small `fleet_cost.json`, divide fleet-cost by tokens served). Emit Q1–Q7 charts. **Gate:** under drift, **static placement violates a chosen p99 SLO** while reactive holds it (Q2 as an *SLO* chart, not just straggler); the **$/token-at-fixed-SLO is below the all-fast-GPU reference**; and the **reactive-LRU-port → reactive+split** headroom is non-trivial (Q4). Headline charts render.
 
-**7 — Live EP validation** *(optional this phase; 1 Ada + 1 A6000)*: actually serve OLMoE EP across the two tiers under `static-balanced`; confirm the **measured** per-tier busy%/straggler matches the **simulated** one (closes the sim-vs-real loop). **Gate:** live straggler within tolerance of simulated → the offline model is trustworthy for the controller.
+**7 — Live EP validation** *(REQUIRED, not optional — closes the "cute simulator" loophole; 1 Ada + 1 A6000)*: actually serve OLMoE EP across the two tiers under `static-balanced` (and one more config), and confirm the **measured** per-tier busy%/straggler/p99 matches the **simulated** prediction **within a stated tolerance**. A serious systems result cannot rest on offline simulation alone; one real EP run that validates the model is the minimum bar. **Gate:** live ≈ simulated within tolerance → the offline regime-map is trustworthy. (Full *online migration* live still deferred to the controller phase — B7 only validates the cost/straggler model.)
 
 ## Instrumentation
 
@@ -66,7 +75,8 @@ Two append-only JSONL streams in `runs/<config>/<ts>/telemetry/`, joined on `(la
 **1. `expert.jsonl`** — per (layer, expert, time-window), from the vLLM MoE-gate hook:
 ```
 window_id, t_start, t_end, layer_id, expert_id, token_load,
-tier_assigned{fast|slow|none}, is_replica, segment_label{chat|code|math|mixed}
+tier_assigned{fast|slow|none}, is_replica, segment_label{chat|code|math|mixed},
+phase{prefill|decode}, expert_class{consistent|temporal}   # phase split + GEM taxonomy
 ```
 **2. `system.jsonl`** — ~1 Hz sidecar (only populated in live B7):
 ```
@@ -101,7 +111,10 @@ On watgpu308, OLMoE serves a **mixed drifting trace**, the gate hook emits `expe
 - **Kill-risk (Q3): turnover ≪ migration** → fall back to **replication-only** (tier-aware replication still beats homogeneous CRAFT); report the timescale as the bounding finding.
 - **Risk: load is stationary (Q1 flat) / no locality (Q5 low)** → no cache-precondition; B2 becomes a negative-result characterization, pivot back to B1.
 - vLLM EP doesn't expose per-expert load → the gate hook (Track A) is the fix; it's the *same* hook B1-A2 needs (logits at `self.gate(...)`), so reuse.
-- 1-card OLMoE EP is artificial → capture is single-GPU (valid: routing is HW-independent); the *real* tier claim is the Qwen3-30B-A3B phase. Treat OLMoE numbers as harness-proving anchors.
+- 1-card OLMoE EP is artificial → capture is single-GPU (valid: routing is HW-independent); the *real* tier claim is the multi-GPU phase. Treat OLMoE numbers as harness-proving anchors.
+- **GEM-overlap (the novelty dart):** "TierShift = GEM + online + replication." → defense is the **GEM-style → reactive+split** gap + the **temporal-token-mass** fraction; if both are large the contribution is real, if ~0 report "static (GEM) suffices." This is *why* GEM-style is a required baseline, not just a citation.
+- **Routing too uniform (per GEM, Qwen3 → 1.5%)** → the coarse model (Mixtral-class) carries the "skew exists" claim; don't headline the fine-grained model.
+- **Capture confounds (reviewer-sniping, advisor Risk 3):** routing isn't *perfectly* HW-independent in practice — **log prefill and decode separately** (`phase` field; they have different load profiles), keep **deterministic settings** (fixed seed/batch where possible), and **sweep window size** (50 ms…5 s) reporting the **sensitivity** of dwell/churn/temporal-mass rather than a single cherry-picked window.
 - Trace not inducing drift → curate sharper domain segments (code-heavy vs chat) per the measured domain-sensitivity literature (Imbalance Ratio 1.43–2.28).
 
 ## Sequencing

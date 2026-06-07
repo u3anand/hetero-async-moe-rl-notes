@@ -36,8 +36,10 @@ Curated literature for **AutoPD-RL** — automatic prefill/decode allocation for
 > static cell is taken; the surviving wedge is the **online/non-stationary** axis both papers punt on.
 
 **The occupied cells (boundaries to carve against):**
+- [[GEM]] — 2026 — arxiv:2605.19945 — **THE closest / most dangerous**: GPU-variability-aware expert→GPU *mapping*, same straggler motivation, consistent-vs-temporal experts. But **static** (names "no online adaptation" as its limit), **intra-generation** variability (7.7–27.7%, not a 2–4× tier gap), **one-expert-one-GPU** (no replicate/split), latency-only. Qwen3-30B-A3B → only 1.5% (uniform routing). The GEM-style static map is a **required B2 baseline**.
 - [[Aurora]] — 2024 — arxiv:2410.17043 — **static-core owner**: optimal hetero expert placement + comm scheduling (colocated-on-hetero = NP-hard). Offline only; names "online dynamic rebalancing" as the gap.
 - [[MegaScale-Infer]] — 2025 — arxiv:2504.02263 — **production heavyweight (ByteDance, ~10k GPU)**: attention/expert disaggregation across H20+L40S tiers. Static placement + greedy historical hot-expert replication; no online migration.
+- [[HarMoEny]] — 2025 — arxiv:2506.12417 — **closest *dynamic* neighbor**: online token redistribution + async expert prefetch vs load imbalance. But **homogeneous** (rebalances to *idle*, not *faster*, GPUs — no tier-speed model); throughput/TTFT, not p99/$. A required B2 baseline.
 
 **The perimeter (fences the wedge — none occupy MoE × hetero × serving × online):**
 - [[HeterMoE]] — 2025 — arxiv:2504.03871 — same attention/expert split, but **training**; static. Serving absent from scope.
