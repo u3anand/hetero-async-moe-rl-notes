@@ -18,6 +18,14 @@ code/b1/runs/
 code/b1/models/
 code/b1/data/
 code/b1/**/*.jsonl
+code/b2/runs/
+code/b2/models/
+code/b2/traces/
+code/b2/**/*.jsonl
 **/.udocker/
 *-*.out
 *-*.err
+
+# Obsidian app/workspace/plugin state — keep the dir, ignore its contents
+.obsidian/*
+!.obsidian/.gitkeep

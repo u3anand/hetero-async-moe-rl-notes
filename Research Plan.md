@@ -1,95 +1,104 @@
 # Research Plan
 
-**Throughput-optimal asynchronous MoE RL on heterogeneous GPU clusters for agentic workloads.**
+**AutoPD-RL — automatic prefill/decode allocation for agentic RL rollouts on heterogeneous GPUs.**
 
-A workload-characterization benchmark (B1) as the precondition, then a heterogeneity-aware scheduler with composable mechanisms as the system contribution (B2).
+A workload-characterization phase (B1) that profiles where prefill/decode/env demand goes and shows static PD configuration fails under non-stationary multi-turn rollout — then an online PD controller that automatically sizes/routes prefill vs decode pools as the system contribution (B2).
+
+> Pivoted 2026-06-04 from the prior MoE-hetero-MILP thesis. Validation of the new direction (verified against primary sources): [[Direction Validation]]. Curated literature: `papers/` ([[RollArt]], [[HexAGenT]], [[Heddle]], [[TokenScale]], [[DynaServe]], …).
 
 ---
 
 ## 1. Motivation
 
-RL post-training of **Mixture-of-Experts** models is how frontier coding/agentic systems are now built (GLM-4.x, Qwen3-Coder, INTELLECT-3, etc.). But the open systems literature only characterizes and schedules this kind of RL for **dense** models on **math** workloads. Three things break when you move to the regime that actually matters — **MoE × asynchronous × multi-replica × heterogeneous compute × agentic**:
+Agentic RL post-training (SWE agents, tool use) runs a **rollout** loop — multi-turn generation interleaved with tool/environment execution — that feeds a **trainer**. On heterogeneous GPU clusters the rollout is best served **disaggregated**: compute-bound **prefill** (ingesting growing context + tool outputs) and bandwidth-bound **decode** (token generation) routed to best-fit hardware. [[RollArt]] establishes exactly this for agentic RL and shows the win — but configures the prefill/decode instance split **manually and statically**, and its authors **explicitly name automatic configuration as future work** (verbatim: *"real deployments currently require manual configuration of prefill and decoding instances, which easily leads to load imbalance. We hence leave it as future work."*).
 
-1. **Agentic episodes are not math episodes.** SWE-style agent rollouts have heavy-tailed wallclock, **bimodal** tool-call latency (fast file ops vs slow test/build runs), and real sandbox I/O. Short, homogeneous, GPU-bound math episodes hide all of this.
-2. **MoE changes where time goes.** Expert-parallel all-to-all and weight broadcast (~95% expert bytes / ~5% router) reshape the cost balance. AReaL-Hex's assumption that rollout cost dominates training cost (`C_I > C_T`) may not hold on MoE — and if it inverts, the scheduling problem changes.
-3. **Heterogeneous tiers differ in compute *and* precision.** A fast tier (Ada, FP8-capable) and a slow tier (Ampere, BF16-only) don't just run at different speeds — they create **asymmetric expert staleness** and **cross-replica router drift** that no dense scheduler models.
+That gap is real and load-bearing because **agentic RL rollout creates time-varying PD demand**: multi-turn interaction, growing context, variable tool-output lengths, environment delays, and a heavy-tailed mix of episodes all shift the prefill:decode pressure ratio over the course of training. A static split → load imbalance, idle GPUs, and — critically — the trainer starving. ([[RollArt]]'s own production bottleneck is the blocking `get_batch` on the **SampleBuffer**, *up to 62% of iteration time as GPU idleness*, waiting for enough complete trajectories.)
 
-No published work occupies this five-dimensional cell, characterized for throughput and scheduled as a system. Each neighbor gives up at least one dimension:
+**Why the serving world hasn't already solved this.** Dynamic prefill/decode autoscaling is, by itself, *not* novel — serving systems already do it: [[TokenScale]] (token-velocity scaling + convertible decoders), [[DOPD]], [[Arrow]], [[DynaServe]] all adjust the PD ratio online; [[DistServe]]/[[Splitwise]] are the static ancestors. But every one assumes **static weights + an SLO-driven request stream**. RL rollout breaks all three of their assumptions:
 
-| Neighbor | Has | Gives up |
-|---|---|---|
-| AReaL-Hex | hetero × async × MILP scheduler × throughput | dense, math, no MoE; assumes `C_I > C_T` |
-| ReLibra | MoE × hetero-*bandwidth* × RL × system | compute-homogeneous, single-replica |
-| R3 / Router-Aware IS | MoE × within-replica × stability | no system, no hetero, no multi-replica |
-| HeterMoE / Lazarus / LAER-MoE | MoE × hetero | pretraining, not RL; no rollout/drift |
-| StreamRL / RollArt / ROLLMUX | hetero × async × RL | dense, math |
-| SWE-World / SWE-MiniSandbox | agentic × sandbox optimization | not MoE, not hetero, not scheduling |
+1. **Weights update every step** — warm-start / KV-reuse / instance-stability assumptions break, and PD layout interacts with cross-cluster weight sync.
+2. **Batch-synchronous long tail** — >90% of rollout runtime sits in the tail; the objective is *batch completion*, not per-request latency.
+3. **The downstream objective is the trainer, not a user** — what matters is **fresh complete trajectories per training deadline** (cf. [[RollArt]] SampleBuffer idle; [[Freshness-Aware-PER]] formalizes freshness on the algorithmic side), not request latency.
 
-We measure system throughput in steady-state windows; we do **not** claim final RL quality (full convergence on a 30B MoE is infeasible at our scale). Precedent: AReaL-Hex headlines "1.31–1.50× throughput, 1.46× cost" with no convergence claim.
+So serving PD-autoscalers don't port unmodified — and **that** is the defensible novelty, not the autoscaling mechanism.
+
+**No published work occupies this cell.** Each neighbor gives up at least one dimension:
+
+| Neighbor | ID | Has | Gives up (vs AutoPD-RL) |
+|---|---|---|---|
+| [[RollArt]] | 2512.22560 | hetero PD for agentic RL, hardware-affinity | **static/manual PD config** (names it as future work) |
+| [[HexAGenT]] | 2605.16637 | PD routing on hetero GPUs, agentic workflows | **fixed pools (routing not sizing); serving SLO objective** |
+| [[Heddle]] | 2603.28101 | trajectory scheduling, runtime prediction, long-tail | per-trajectory **MP tuning only**; calls PD-sizing *orthogonal* |
+| [[ROSE]] | 2605.06534 | elastic rollout on spare serving GPUs | lever is harvest-idle-GPU, **not PD sizing** |
+| [[TokenScale]]/[[DynaServe]]/[[DOPD]]/[[Arrow]] | serving | **dynamic PD-ratio control** | static weights + SLO; **not RL rollout** |
+| [[RollPacker]] | 2509.21009 | long-tail mitigation (synchronous RL) | batch-round batching, **not PD resource sizing** |
+| [[EARL]] | 2510.05943 | dynamic parallelism under long context | parallelism layout, **not PD pool ratio** |
+
+We measure **rollout throughput and trainer idle time** in steady-state windows; we do **not** claim final RL quality (full convergence at our scale is infeasible). Precedent: [[RollArt]]/AReaL-style systems headline throughput/cost with no convergence claim.
 
 ## 2. B1 — Characterize first (and why)
 
-Before designing a scheduler, measure where time actually goes on this workload, on real heterogeneous hardware. **At this stage the charts *are* the contribution** — they either show the workload is structurally different from dense math RL (justifying a new scheduler) or they don't. They also produce the cost inputs the scheduler in §3 consumes.
+Before building a controller, measure **where prefill/decode/env demand actually goes** on agentic RL rollout, on real heterogeneous hardware, and show a **static PD split is mis-sized for a moving target**. **At this stage the charts *are* the contribution** — they either show PD demand is non-stationary enough to defeat static configuration (justifying a controller) or they don't. They also produce the demand signals the controller in §3 consumes.
 
 Six questions, six charts (+ one supplementary):
 
-| #   | Question                                                                  | What it determines                                    |
-| --- | ------------------------------------------------------------------------- | ----------------------------------------------------- |
-| Q1  | Where does per-episode wallclock go? (per-tool-call wallclock × category) | Is tool I/O bimodal; where to invest mechanism effort |
-| Q2  | Is the GPU starved? (GPU busy % + sandbox queue depth)                    | Whether tool-aware scheduling (M4) is needed          |
-| Q3  | Does `C_I > C_T` hold for MoE? (isolate inference vs train cost)          | The central scheduling assumption — confirm or refute |
-| Q4  | Weight-broadcast cost and split (router bytes/time vs expert)             | Sizes the decoupled-broadcast win (M1)                |
-| Q5  | How heavy-tailed are episodes? (per-episode wallclock CDF)                | Concurrency formula + scheduler cost terms            |
-| Q6  | Cross-replica router-KL drift vs tier-speed gap                           | Sizes the cross-replica routing-replay win (M3)       |
-| Q7  | (suppl.) train MFU + rollout HBM-bandwidth utilization                    | Kernel-level perf sanity check                        |
+| #   | Question | What it determines |
+| --- | --- | --- |
+| Q1  | Where does per-turn time go? (prefill vs decode vs tool/env, by tool category) | Whether PD demand is the right knob; where env-heavy phases sit |
+| Q2  | How non-stationary is the prefill:decode ratio? (P:D demand over rollout time, per phase) | **The core motivation** — does a static split mis-fit a moving target? |
+| Q3  | Does a static PD pool cause idle GPUs *and* trainer starvation? (GPU busy% by worker type + SampleBuffer fill + trainer idle) | Sizes the win; connects PD imbalance → freshness/idle |
+| Q4  | Context growth + TTFT/TPOT trajectories (per-turn input/output tokens, TTFT, TPOT) | The predictable signals a controller can act on |
+| Q5  | How heavy-tailed are episodes, and do they switch PD regime? (per-episode wallclock CDF + per-episode P/D/env phase mix) | Whether episodes shift prefill-heavy↔decode-heavy↔env-heavy |
+| Q6  | Do SWE signals predict PD/env class? (repo/test/build/cache/tool features → prefill-heavy / decode-heavy / env-heavy / failure-prone) | Whether a **SWE-aware predictor** is feasible (else demand-only control) |
+| Q7  | (suppl.) rollout HBM-bw + prefill/decode queue depths | Saturation sanity + queue-pressure controller inputs |
 
-Reported as **p50/p95/p99** over steady-state windows (heavy-tailed → means hide the story). **Success:** if ≥5 of 6 diverge from prior dense/math characterizations, B1 stands alone (workshop / characterization track); otherwise it is the load-bearing motivation section of the system paper.
+Reported as **p50/p95/p99** over steady-state windows (heavy-tailed → means hide the story). **Success:** if Q2/Q3/Q5 show PD demand is non-stationary enough that any single static split leaves measurable idle/starvation, B1 stands alone (characterization track) *and* is the load-bearing motivation for B2.
 
 ## 3. Main idea going forward (the system)
 
-A **heterogeneity-aware scheduler** that extends AReaL-Hex's MILP with expert-placement variables, a router-KL constraint, and tier-bandwidth-aware all-to-all cost — paired with lightweight **runtime controllers** that maintain the MILP setpoints. Static placement (MILP solved once) + dynamic feedback control; no re-solve mid-run.
+**AutoPD-RL: an online controller that automatically sizes and routes the prefill/decode pools for agentic RL rollout on heterogeneous GPUs**, replacing RollArt's manual `hw_mapping`/static instance counts. Predict prefill/decode pressure from rollout signals; dynamically reallocate or route rollout requests across heterogeneous inference workers to keep both pools busy **and** maximize fresh completed trajectories per training deadline.
 
-Three composable mechanisms the scheduler controls:
+Composable mechanisms:
 
 | # | Mechanism | What it does |
 |---|---|---|
-| M1 | Decoupled router/expert broadcast | Router (~5% of params) high cadence; experts (~95%) low cadence |
-| M2 | Tier-aware EP all-to-all | Expert placement + routing avoid lock-step to the slow tier (likely the largest single win) |
-| M3 | Cross-replica routing replay | Extends R3 with per-token router-version tags; train side reconciles cross-replica drift |
+| M1 | **Demand predictor** | From per-turn token counts, context growth, TTFT/TPOT, queue depths → forecast near-term prefill vs decode pressure (borrows the runtime-prediction idea from [[Heddle]], retargeted to PD pressure not trajectory length) |
+| M2 | **PD pool sizing / role-flip** | Adjust prefill:decode instance counts online; convertible workers flip role under bursts (adapts [[TokenScale]]/[[DynaServe]] mechanisms — then shows why they need RL-specific modification) |
+| M3 | **Freshness-aware routing** | Route/prioritize so the trainer's `get_batch` deadline is met (objective = fresh complete trajectories, not request latency); SampleBuffer fill + trajectory age as control inputs |
 
-**M4 (conditional) — tool-execution-aware co-scheduling:** sandbox CPU as a first-class MILP resource. Kept as a *dormant* variable in the formulation from the start; activated only if B1 Q2 shows GPU starvation from sandbox contention (activation is a flag, not a redesign).
+**M4 (conditional) — SWE-aware predictor:** if B1 Q6 shows repo/test/build/cache/tool signals predict a trajectory's PD/env class, fold those features into M1. Kept dormant; activated only if Q6 is positive (a flag, not a redesign).
 
-MILP extensions over AReaL-Hex's `(D_T, D_I, σ, τ)`: new variables `e_{i,t}` (per-expert tier placement), `β_router/β_expert` (per-group broadcast cadence), explicit replica count `K`, and dormant sandbox `k_s/R_s`; new constraints `KL(R_replica || R_trainer) ≤ ε` and tier-bandwidth-respecting all-to-all cost; same objective shape `min max(C_T, C_I)`.
+**Why this isn't the retired ideas:** it is **not** generic trajectory scheduling ([[Heddle]]'s territory — and Heddle calls PD-sizing orthogonal); it is **not** generic PD disaggregation (serving systems own that); it is **not** a RollArt replacement (RollArt provides the disaggregated substrate — AutoPD-RL is the *automatic* layer it leaves open). The retired SampleBuffer-freshness idea returns as the **objective (M3)**, not as a scheduling mechanism.
 
-**Headline target:** the full system on a naive-hetero cluster recovers ≥80% of homogeneous-fastest throughput at heterogeneous cost (AReaL-Hex reported 1.31–1.50× at fixed budget).
+**Headline target:** AutoPD-RL on a naive/static-PD heterogeneous cluster recovers most of the throughput a hand-tuned PD split achieves — *without* the hand-tuning — and reduces trainer idle vs the static baseline across changing workload mixes.
 
-**Evaluation:** for three baseline configs (homog-fastest, homog-slowest, naive-hetero), ablate baseline → +M1 → +M3 → +M2 → full system (+M4 only if Q2 triggers).
+**Evaluation:** baselines = static-PD configs (RollArt-style manual splits: prefill-heavy, decode-heavy, balanced) + a serving-autoscaler-ported-naively baseline; ablate baseline → +M1 → +M2 → +M3 → full (+M4 if Q6 triggers). Metrics: rollout throughput, trainer idle %, fresh-trajectories-per-deadline, GPU busy% by worker type.
 
 ## 4. How we'll use WatGPU (initial phase)
 
-Reliable hardware is a single node — **watgpu308**, 8 GPUs = 4× L40S + 2× RTX A6000 + 2× RTX 6000 Ada. That one node is effectively *a heterogeneous cluster in a box*: a **fast tier** (Ada, FP8-capable: L40S + RTX 6000 Ada) and a genuine **slow tier** (Ampere RTX A6000, BF16-only) — a real ~2.4× compute gap plus an FP8-vs-no-FP8 split. Cluster constraints (preemption, 32 cores, no NVLink, conda/udocker workflow) are in [[WatGPU]].
+Reliable hardware is a single node — **watgpu308**, 8 GPUs = 4× L40S + 2× RTX A6000 + 2× RTX 6000 Ada — effectively *a heterogeneous cluster in a box*: a **fast tier** (Ada, FP8-capable: L40S + RTX 6000 Ada) and a **slow tier** (Ampere RTX A6000, BF16-only), a real ~2.4× compute gap. For AutoPD-RL this maps cleanly onto **prefill workers vs decode workers on different tiers**. Cluster constraints (preemption, 32 cores, no NVLink, udocker workflow) in [[WatGPU]].
 
-**Initial phase — make it work + the 3-config comparison.** Bring the full async loop up on a small MoE (**OLMoE-1B-7B**, fits one card → no TP/FP8) and run the three baseline configs (homo-fast / homo-slow / hetero) on watgpu308, emitting Q1–Q7. Full step-by-step plan with GPU pools and gates: **[[Initial Plan]]**.
+**Initial phase — make it work + profile PD demand.** Bring the full async agentic-RL rollout loop up on a small model (**OLMoE-1B-7B**, fits one card → no TP/FP8), disaggregate prefill/decode across tiers, run the static-PD baseline configs, and emit Q1–Q7 — the PD-demand profile that motivates the controller. Full step-by-step plan with GPU pools and gates: **[[Initial Plan]]**.
 
-Then **swap to Qwen3-30B-A3B** (FP8 + TP=2) reusing the same harness unchanged. Deferred: 16-GPU / multi-node, the full tier-mix sweep, and AWS for the controlled eval where statistical power and a stable 2-tier shape matter.
+Then **swap to Qwen3-30B-A3B** (FP8 + TP=2) reusing the same harness unchanged. Deferred: 16-GPU / multi-node, the controller's online re-sizing at scale, and AWS for the controlled eval where statistical power and a stable 2-tier shape matter.
 
 ---
 
 ## Workload
 
-| Dim              | Spec                                                                                    |
-| ---------------- | --------------------------------------------------------------------------------------- |
-| Model            | Qwen3-30B-A3B (30B total, ~3B active, 128 experts); OLMoE-1B-7B for bring-up            |
-| Fine-tuning      | LoRA (full FT optional)                                                                 |
-| RL algorithm     | GRPO with R3 (rollout routing replay)                                                   |
-| Agent            | mini-swe-agent — bash-only tool surface                                                 |
+| Dim | Spec |
+| --- | --- |
+| Model | Qwen3-30B-A3B (agentic RL target); OLMoE-1B-7B for bring-up (MoE incidental now, not the thesis) |
+| Fine-tuning | LoRA (full FT optional) |
+| RL algorithm | GRPO (unchanged — not a contribution) |
+| Agent | mini-swe-agent — bash-only tool surface |
 | Sandbox / reward | per-episode container (rootless udocker on WatGPU); reward = the repo's real test suite |
-| Dataset          | `nebius/SWE-rebench-openhands-trajectories` (67K trajectories, 1,823 Python repos)      |
-| Stack            | prime-rl orchestration · PyTorch FSDP2 trainer · vLLM (FP8) inference · DTensor EP      |
-| Concurrency      | asynchronous multi-replica rollout; bounded staleness `η`                               |
+| Dataset | `nebius/SWE-rebench-openhands-trajectories` (67K trajectories, 1,823 Python repos) |
+| Stack | prime-rl orchestration · PyTorch FSDP2 trainer · vLLM (FP8) inference, **prefill/decode-disaggregated** · udocker env |
+| Concurrency | asynchronous multi-replica rollout; bounded staleness `η`; trainer SampleBuffer |
 
 ## Out of scope
-New RL algorithm (GRPO unchanged) · new optimizer or parallelism axis · final SWE-bench pass-rate / convergence-quality claims · dynamic/elastic cluster membership · repo-prefix KV cache · multimodal/VLA RL · Megatron port of the mechanisms (slime port is a stretch robustness experiment).
+New RL algorithm (GRPO unchanged) · new optimizer/parallelism axis · final SWE-bench pass-rate / convergence claims · MoE-internals scheduling (expert placement, router drift — retired with the old thesis) · multimodal/VLA RL · the serving-SLO objective (we optimize trainer-facing freshness/throughput, not request latency).
 
 ## Related notes
-[[WatGPU]] (cluster) · [[Initial Plan]] (initial phase) · concept notes: [[MoE vs Dense Workload]], [[MoE Architecture]], [[Inference]], [[Training]], [[Transformer]] · paper notes in `Papers/` ([[AReaL-Hex]], [[ReLibra]], [[R3]], [[Router-Aware IS]], [[Papers/prime-rl]], [[Papers/slime]], [[HeterMoE]], [[Lazarus]]).
+[[Direction Validation]] (the verified wedge) · [[WatGPU]] (cluster) · [[Initial Plan]] (initial phase) · concept notes: [[Inference]], [[Training]], [[Transformer]] · paper notes in `papers/` ([[RollArt]], [[HexAGenT]], [[Heddle]], [[ROSE]], [[TokenScale]], [[DynaServe]], [[DistServe]], [[Splitwise]], [[RollPacker]], [[EARL]], [[ROLL]], [[Freshness-Aware-PER]], [[RLix]]).
