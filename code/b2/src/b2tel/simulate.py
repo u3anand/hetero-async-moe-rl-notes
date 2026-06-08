@@ -176,15 +176,20 @@ def simulate_config(
     for i, wid in enumerate(w.window_ids):
         cur = _flat_load(w, wid)
         admitted = 0
+        # all dynamic configs FILL the fast tier with their hottest cap_fast experts
+        # (apples-to-apples with static, which also fills cap_fast)
+        def _topn(loadmap, n):
+            return set(sorted((k for k, v in loadmap.items() if v > 0),
+                              key=lambda k: loadmap[k], reverse=True)[:n])
         if is_static:
             fast_set, split = static_fast, static_split
         elif config == "oracle-dynamic":
-            fast_set, split = _demand_set(w, wid, hot_k), True            # current window, ceiling
+            fast_set, split = _topn(cur, cap_fast), True                  # current window, ceiling
         elif config == "HarMoEny-style":
-            fast_set, split = _demand_set(w, wid, hot_k), False           # token-balance, no tier term
+            fast_set, split = _topn(cur, cap_fast), False                 # token-balance, no tier term
         else:  # reactive caches react to the *previous* window (no forecast)
-            sig_wid = w.window_ids[i - 1] if i > 0 else wid
-            demand = _demand_set(w, sig_wid, hot_k)
+            sig = cur if i == 0 else _flat_load(w, w.window_ids[i - 1])
+            demand = _topn(sig, cap_fast)
             admitted = _sticky_admit(resident, last_seen, demand, cap_fast, i)
             fast_set, split = set(resident), (config == "reactive+split")
 
