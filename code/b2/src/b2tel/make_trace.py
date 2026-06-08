@@ -163,9 +163,10 @@ def build_pools(args, rng: random.Random) -> dict[str, list[str]]:
         pool: list[str] = []
         if not args.synthetic:
             srcs = [s for s in chosen[domain] if s in SOURCES]
-            per_src = max(1, -(-want // max(1, len(srcs))))  # ceil split across sources
+            # request the full `want` from EACH source so a domain stays diverse even when
+            # some sources fail (e.g. lmsys gated) — over-fetch is fine, take() uses `want`.
             for src in srcs:
-                pool += _load_source(src, per_src + 16, args.max_chars)
+                pool += _load_source(src, want + 16, args.max_chars)
         # prefer real prompts: only fall back to synthetic if NOTHING real loaded.
         # if a real source is small (e.g. HumanEval=164), take() cycles it to fill `want`.
         if not pool:
