@@ -39,11 +39,14 @@ from pathlib import Path
 DOMAINS = ("chat", "code", "math")
 
 # Best-effort HF dataset coordinates per source name. (id, config, split, kind).
+# NOTE: use NAMESPACED repo ids — datasets>=3 dropped script-based loading, so the bare
+# "gsm8k"/"openai_humaneval" script datasets fail; the parquet-backed "openai/..." repos work.
+# lmsys is gated → needs HF_TOKEN (huggingface-cli login) or it falls back to synthetic.
 SOURCES = {
     "sharegpt": ("Aeala/ShareGPT_Vicuna_unfiltered", None, "train", "sharegpt"),
     "lmsys": ("lmsys/lmsys-chat-1m", None, "train", "lmsys"),
-    "humaneval": ("openai_humaneval", None, "test", "humaneval"),
-    "gsm8k": ("gsm8k", "main", "test", "gsm8k"),
+    "humaneval": ("openai/openai_humaneval", None, "test", "humaneval"),
+    "gsm8k": ("openai/gsm8k", "main", "test", "gsm8k"),
 }
 SOURCE_DOMAIN = {
     "sharegpt": "chat", "lmsys": "chat", "humaneval": "code", "gsm8k": "math",
@@ -159,12 +162,20 @@ def build_pools(args, rng: random.Random) -> dict[str, list[str]]:
         want = max(need[domain], 1)
         pool: list[str] = []
         if not args.synthetic:
-            per_src = max(1, want // max(1, len(chosen[domain])))
-            for src in chosen[domain]:
-                if src in SOURCES:
-                    pool += _load_source(src, per_src + 8, args.max_chars)
-        if len(pool) < want:  # top up (or fully replace) with synthetic
-            pool += _synth(domain, want - len(pool), rng)
+            srcs = [s for s in chosen[domain] if s in SOURCES]
+            per_src = max(1, -(-want // max(1, len(srcs))))  # ceil split across sources
+            for src in srcs:
+                pool += _load_source(src, per_src + 16, args.max_chars)
+        # prefer real prompts: only fall back to synthetic if NOTHING real loaded.
+        # if a real source is small (e.g. HumanEval=164), take() cycles it to fill `want`.
+        if not pool:
+            pool = _synth(domain, want, rng)
+            print(f"[make_trace] {domain}: 0 real -> 100% SYNTHETIC", file=sys.stderr)
+        elif len(pool) < want:
+            print(f"[make_trace] {domain}: {len(pool)} real prompts cycled to fill {want} "
+                  f"(no synthetic)", file=sys.stderr)
+        else:
+            print(f"[make_trace] {domain}: {len(pool)} real prompts", file=sys.stderr)
         rng.shuffle(pool)
         src_by_domain[domain] = pool
     return src_by_domain
