@@ -4,10 +4,12 @@
 #
 # B2 needs ONLY the vLLM fork (serving-only; no prime-rl / mini-swe-agent / udocker).
 # The MoE-gate hook (vllm/model_executor/layers/expert_load_logger.py + the one-line call in
-# models/olmoe.py) is kernel-free → VLLM_USE_PRECOMPILED=1, no CUDA build. Capture MUST run
-# with --enforce-eager (the hook no-ops under torch.compile). The same insertion point is
-# shared with B1-A2's router-logit hook.
+# models/olmoe.py, and the external-gate path in models/qwen3_moe.py) is kernel-free →
+# VLLM_USE_PRECOMPILED=1, no CUDA build. Capture MUST run with --enforce-eager (the hook
+# no-ops under torch.compile). The same insertion point is shared with B1-A2's router-logit
+# hook. qwen3_moe also emits per-token prefill/decode tags + a sibling expert_mb.<pid>.jsonl
+# with per-micro-batch imbalance (set VLLM_B2_SIM_GPUS for the round-robin EP layout).
 #
 # Off base commit f56ac5689; b2-expert-telemetry branches off b1-instrumentation (keeps the
 # shared B1 router-logit hook). Submodule pointer is bumped to this commit.
-vllm   git@github.com:u3anand/vllm.git   84969d1a4   # b2-expert-telemetry: expert_load_logger MoE-gate hook (windowed per-expert token load → expert.jsonl)
+vllm   git@github.com:u3anand/vllm.git   602841ae6   # b2-expert-telemetry: olmoe+qwen3 expert-load hook, prefill/decode split, per-micro-batch imbalance (expert_mb.jsonl)
