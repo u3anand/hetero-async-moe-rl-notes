@@ -12,4 +12,4 @@
 #
 # Off base commit f56ac5689; b2-expert-telemetry branches off b1-instrumentation (keeps the
 # shared B1 router-logit hook). Submodule pointer is bumped to this commit.
-vllm   git@github.com:u3anand/vllm.git   602841ae6   # b2-expert-telemetry: olmoe+qwen3 expert-load hook, prefill/decode split, per-micro-batch imbalance (expert_mb.jsonl)
+vllm   git@github.com:u3anand/vllm.git   f7cd011d4   # b2-expert-telemetry: olmoe+qwen3 expert-load hook, per-token prefill/decode split (query_start_loc, vLLM V1), per-micro-batch imbalance (expert_mb.jsonl)
