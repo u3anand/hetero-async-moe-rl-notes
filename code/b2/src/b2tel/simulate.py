@@ -72,31 +72,63 @@ def _flat_load(w: Windowed, wid: int) -> dict[tuple[int, int], float]:
     return out
 
 
-def _lpt_makespan(loads: list[float], n_bins: int, rate: float) -> float:
-    """Longest-processing-time bin-packing; return max-bin time (seconds)."""
-    if n_bins <= 0 or rate <= 0:
+def _fit_two_term(tier: dict, which: str, batch_key: str) -> tuple[float, float]:
+    """Return (load_weights_s, per_token_s) for tier ``which`` ('fast'/'slow').
+
+    Two-point fit of ``{which}_ms_per_call`` over batch size → cost(n) = load_weights +
+    n·per_token. The fixed weight-load term is what makes the decode regime honest: each
+    expert (and each split replica) pays a full weight load every step it is active,
+    regardless of its token count, so replicate-and-split is no longer free. Falls back to the
+    legacy pure-throughput model (no fixed term) when ``ms_per_call`` is absent."""
+    pb = tier["per_batch"]
+    ms_key = f"{which}_ms_per_call"
+    pts = [(int(b), float(d[ms_key])) for b, d in pb.items() if d.get(ms_key) is not None]
+    if len(pts) >= 2:
+        pts.sort()
+        (nlo, mlo), (nhi, mhi) = pts[0], pts[-1]
+        if nhi > nlo:
+            per_token_ms = max(1e-9, (mhi - mlo) / (nhi - nlo))
+            load_weights_ms = max(0.0, mlo - per_token_ms * nlo)
+            return load_weights_ms / 1000.0, per_token_ms / 1000.0
+    # legacy / single-batch: pure throughput at the chosen batch, no fixed term
+    d = pb.get(batch_key) or next(iter(pb.values()))
+    tok_s = float(d[f"{which}_tok_s"])
+    return 0.0, (1.0 / tok_s if tok_s > 0 else float("inf"))
+
+
+def _lpt_makespan(
+    loads: list[float], n_bins: int, load_weights_s: float, per_token_s: float
+) -> float:
+    """Longest-processing-time bin-packing; return max-bin **time** (seconds).
+
+    Each active expert contributes ``load_weights_s`` (fixed weight load, paid once per step)
+    plus ``load·per_token_s`` (marginal). Packing by per-item time means more distinct experts
+    on a GPU costs more even at equal token load — the decode/weight-load reality."""
+    if n_bins <= 0 or per_token_s == float("inf"):
         return float("inf")
     bins = np.zeros(n_bins)
-    for L in sorted(loads, reverse=True):
-        bins[int(np.argmin(bins))] += L
-    return float(bins.max() / rate)
+    items = sorted((load_weights_s + L * per_token_s for L in loads), reverse=True)
+    for t in items:
+        bins[int(np.argmin(bins))] += t
+    return float(bins.max())
 
 
 def _tier_time(
     fast_loads: list[float], slow_loads: list[float],
-    n_fast: int, n_slow: int, fast_tok_s: float, slow_tok_s: float,
+    n_fast: int, n_slow: int, fast_cost: tuple[float, float], slow_cost: tuple[float, float],
     split_hottest: bool,
 ) -> tuple[float, float]:
     """Per-tier service time. ``split_hottest`` divides the single largest fast expert
-    evenly across the fast GPUs before packing the rest (the reactive+split lever)."""
+    evenly across the fast GPUs before packing the rest (the reactive+split lever) — each
+    replica is now a separate item, so it pays its own fixed weight load (decode break-even)."""
     fl = list(fast_loads)
     if split_hottest and fl and n_fast > 1:
         fl.sort(reverse=True)
         hot = fl.pop(0)
         share = hot / n_fast
-        fl.extend([share] * n_fast)  # the split replicas
-    fast_t = _lpt_makespan(fl, n_fast, fast_tok_s) if fl else 0.0
-    slow_t = _lpt_makespan(slow_loads, n_slow, slow_tok_s) if slow_loads else 0.0
+        fl.extend([share] * n_fast)  # the split replicas (each pays load_weights)
+    fast_t = _lpt_makespan(fl, n_fast, *fast_cost) if fl else 0.0
+    slow_t = _lpt_makespan(slow_loads, n_slow, *slow_cost) if slow_loads else 0.0
     return fast_t, slow_t
 
 
@@ -154,7 +186,8 @@ def _sticky_admit(
 
 
 def simulate_config(
-    config: str, w: Windowed, fleet: dict, fast_tok_s: float, slow_tok_s: float,
+    config: str, w: Windowed, fleet: dict,
+    fast_cost: tuple[float, float], slow_cost: tuple[float, float],
     cap_fast: int, migration_ms: float, migrate_viable: bool,
     global_mean: dict[tuple[int, int], float], hot_k: int,
 ) -> dict:
@@ -196,7 +229,7 @@ def simulate_config(
         fast_loads = [cur[k] for k in fast_set if k in cur]
         slow_loads = [v for k, v in cur.items() if k not in fast_set]
         fast_t, slow_t = _tier_time(
-            fast_loads, slow_loads, n_fast, n_slow, fast_tok_s, slow_tok_s, split
+            fast_loads, slow_loads, n_fast, n_slow, fast_cost, slow_cost, split
         )
         if deployable_reactive:
             migrations += admitted
@@ -225,7 +258,7 @@ def simulate_config(
 
 
 def all_fast_reference(
-    w: Windowed, fleet: dict, fast_tok_s: float, cap_fast_per_gpu: int
+    w: Windowed, fleet: dict, fast_cost: tuple[float, float], cap_fast_per_gpu: int
 ) -> dict:
     """All experts on a fast-only fleet sized to hold them (the cost-at-SLO reference)."""
     n_experts_total = len(w.layers) * w.n_experts
@@ -233,7 +266,7 @@ def all_fast_reference(
     lat = []
     for wid in w.window_ids:
         cur = _flat_load(w, wid)
-        lat.append(_lpt_makespan(list(cur.values()), n_fast, fast_tok_s))
+        lat.append(_lpt_makespan(list(cur.values()), n_fast, *fast_cost))
     lat_a = np.array(lat)
     total_tokens = sum(float(w.total_load(wid).sum()) for wid in w.window_ids)
     wall_s = float(lat_a.sum())
@@ -278,6 +311,9 @@ def main(argv: list[str] | None = None) -> int:
     pb = tier["per_batch"].get(bkey) or next(iter(tier["per_batch"].values()))
     fast_tok_s = float(pb["fast_tok_s"])
     slow_tok_s = float(pb["slow_tok_s"])
+    # two-term cost: (load_weights_s, per_token_s) per tier — fixed weight load + marginal.
+    fast_cost = _fit_two_term(tier, "fast", bkey)
+    slow_cost = _fit_two_term(tier, "slow", bkey)
     migration_ms = float(mig["verdict"]["migration_ms"])
     migrate_viable = bool(mig["verdict"]["migrate_viable"])
 
@@ -291,11 +327,11 @@ def main(argv: list[str] | None = None) -> int:
             global_mean[k] = global_mean.get(k, 0.0) + v
 
     results = {
-        c: simulate_config(c, w, fleet, fast_tok_s, slow_tok_s, cap_fast,
+        c: simulate_config(c, w, fleet, fast_cost, slow_cost, cap_fast,
                            migration_ms, migrate_viable, global_mean, w.top_k)
         for c in CONFIGS
     }
-    ref = all_fast_reference(w, fleet, fast_tok_s, args.cap_fast_per_gpu)
+    ref = all_fast_reference(w, fleet, fast_cost, args.cap_fast_per_gpu)
 
     # derived: taxonomy, locality, the three gaps
     taxonomy = classify_experts(w, k=w.top_k, consistent_frac=args.consistent_frac)
@@ -328,6 +364,8 @@ def main(argv: list[str] | None = None) -> int:
         "params": {
             "batch": args.batch, "fast_tok_s": fast_tok_s, "slow_tok_s": slow_tok_s,
             "tier_ratio": fast_tok_s / slow_tok_s if slow_tok_s else None,
+            "fast_cost_s": {"load_weights": fast_cost[0], "per_token": fast_cost[1]},
+            "slow_cost_s": {"load_weights": slow_cost[0], "per_token": slow_cost[1]},
             "cap_fast": cap_fast, "n_experts_total": n_experts_total,
             "migration_ms": migration_ms, "migrate_viable": migrate_viable,
             "slo_p99_ms": slo, "n_windows": len(w.window_ids),

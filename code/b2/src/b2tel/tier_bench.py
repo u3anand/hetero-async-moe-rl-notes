@@ -101,7 +101,10 @@ def _combine(fast_path: str, slow_path: str, out_path: str) -> int:
             continue
         ft = fast["per_batch"][sb]["tok_s"]
         st = slow["per_batch"][sb]["tok_s"]
+        # carry ms_per_call so the simulator can fit cost(n)=load_weights+n*per_token
         per_batch[sb] = {"fast_tok_s": ft, "slow_tok_s": st,
+                         "fast_ms_per_call": fast["per_batch"][sb].get("ms_per_call"),
+                         "slow_ms_per_call": slow["per_batch"][sb].get("ms_per_call"),
                          "ratio": (ft / st) if st > 0 else None}
     out = {
         "dtype": "bfloat16",
@@ -184,6 +187,9 @@ def main(argv: list[str] | None = None) -> int:
         st = slow["per_batch"][b]["tok_s"]
         per_batch[str(b)] = {
             "fast_tok_s": ft, "slow_tok_s": st,
+            # carry ms_per_call so the simulator can fit cost(n)=load_weights+n*per_token
+            "fast_ms_per_call": fast["per_batch"][b]["ms_per_call"],
+            "slow_ms_per_call": slow["per_batch"][b]["ms_per_call"],
             "ratio": (ft / st) if st > 0 else None,
         }
 

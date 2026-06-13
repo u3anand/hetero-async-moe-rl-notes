@@ -38,6 +38,15 @@ from pathlib import Path
 
 DOMAINS = ("chat", "code", "math")
 
+# Output-length buckets for --length-mix (Research Plan 2: vary output length so the workload
+# spans decode-light → decode-heavy and prefill/decode are both well represented). Inclusive
+# (min, max) completion-token ranges; one is chosen per request and a value sampled within it.
+LENGTH_BUCKETS = {
+    "short": (16, 64),
+    "medium": (128, 512),
+    "long": (1024, 2048),
+}
+
 # Best-effort HF dataset coordinates per source name. (id, config, split, kind).
 # NOTE: use NAMESPACED repo ids — datasets>=3 dropped script-based loading, so the bare
 # "gsm8k"/"openai_humaneval" script datasets fail; the parquet-backed "openai/..." repos work.
@@ -190,8 +199,14 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--segments", default="chat,code,math,mixed",
                     help="ordered segment blocks; 'mixed' interleaves all domains")
     ap.add_argument("--per-segment", type=int, default=200, help="requests per block")
-    ap.add_argument("--max-tokens", type=int, default=256, help="completion cap per request")
-    ap.add_argument("--max-chars", type=int, default=2000, help="prompt truncation")
+    ap.add_argument("--max-tokens", type=int, default=256,
+                    help="fixed completion cap per request (used when --length-mix is unset)")
+    ap.add_argument("--length-mix", default="",
+                    help="comma list of output-length buckets to sample per request "
+                         f"(any of {','.join(LENGTH_BUCKETS)}); empty = fixed --max-tokens")
+    ap.add_argument("--max-chars", type=int, default=8000,
+                    help="prompt truncation cap; large so natural prompt lengths (hence prefill "
+                         "sizes) vary across domains")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--synthetic", action="store_true", help="force offline synthetic prompts")
     ap.add_argument("--out", required=True, help="output trace .jsonl")
@@ -200,6 +215,21 @@ def main(argv: list[str] | None = None) -> int:
     rng = random.Random(args.seed)
     pools = build_pools(args, rng)
     cursors = {d: 0 for d in DOMAINS}
+
+    # output-length sampler (independent rng so it's reproducible regardless of pool building)
+    len_rng = random.Random(args.seed + 1)
+    mix = [b.strip() for b in args.length_mix.split(",") if b.strip()]
+    bad = [b for b in mix if b not in LENGTH_BUCKETS]
+    if bad:
+        print(f"[make_trace] ignoring unknown length buckets {bad}", file=sys.stderr)
+    mix = [b for b in mix if b in LENGTH_BUCKETS]
+
+    def pick_length() -> tuple[int, str | None]:
+        if not mix:
+            return args.max_tokens, None
+        bucket = len_rng.choice(mix)
+        lo, hi = LENGTH_BUCKETS[bucket]
+        return len_rng.randint(lo, hi), bucket
 
     def take(domain: str) -> str:
         pool = pools[domain]
@@ -223,14 +253,17 @@ def main(argv: list[str] | None = None) -> int:
                 else:
                     print(f"[make_trace] unknown segment '{seg}', skipping", file=sys.stderr)
                     break
+                max_tokens, len_bucket = pick_length()
                 rec = {
                     "req_id": req_id,
                     "segment_label": seg,
                     "domain": domain,
                     "prompt": take(domain),
-                    "max_tokens": args.max_tokens,
+                    "max_tokens": max_tokens,
                     "block_idx": block_idx,
                 }
+                if len_bucket is not None:
+                    rec["len_bucket"] = len_bucket
                 fh.write(json.dumps(rec) + "\n")
                 req_id += 1
                 counts[seg] = counts.get(seg, 0) + 1

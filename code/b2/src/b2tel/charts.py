@@ -33,9 +33,12 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
 from b2tel.analysis import (  # noqa: E402
-    build_windowed, classify_experts, hot_set, imbalance_series, reactive_hit_rate,
+    build_windowed, classify_experts, hot_set, hot_streak_cdf, imbalance_series,
+    microbatch_vs_window, per_gpu_imbalance_series, reactive_hit_rate, topn_mass_skew,
 )
 from b2tel.telemetry import assign_segments, read_jsonl  # noqa: E402
+
+PHASES = ["prefill", "decode"]
 
 SEG_ORDER = ["chat", "code", "math", "mixed"]
 
@@ -193,6 +196,100 @@ def chart_taxonomy(w, sim, out: Path):
     _save(fig, out, "q_taxonomy.png")
 
 
+def chart_hot_streak(w, out: Path):
+    """Q8 — CDF of how long an expert stays hot once hot (Khuzaima's ask)."""
+    hs = hot_streak_cdf(w)
+    if not hs["lengths_windows"]:
+        print("[charts] hot-streak: no streaks, skipping")
+        return
+    dt = hs["window_dt_s"]
+    xs = [n * dt for n in hs["lengths_windows"]]
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.step(xs, hs["cdf"], where="post", color="#1f77b4", lw=1.8)
+    if hs["median_s"]:
+        ax.axvline(hs["median_s"], ls="--", c="#d62728", lw=1,
+                   label=f"median {hs['median_s']:.1f}s ({hs['median_windows']:.0f} win)")
+        ax.axvline(dt, ls=":", c="gray", lw=0.8, label=f"1 window = {dt:.1f}s")
+        ax.legend(fontsize=8)
+    ax.set_xlabel("hot-streak length (s)")
+    ax.set_ylabel("CDF")
+    ax.set_title("Q8 — once hot, how long does an expert stay hot?")
+    _save(fig, out, "q8_hot_streak_cdf.png")
+
+
+def chart_phase_imbalance(rows, n_gpus: int, out: Path):
+    """Prefill vs decode: per-GPU token-load and activated-expert imbalance (the verdict
+    metric). Activated-expert is the decode-cost metric that can stay skewed when token-load
+    looks flat."""
+    means = {}
+    for ph in PHASES:
+        try:
+            wp = build_windowed(rows, phase=ph)
+        except ValueError:
+            continue
+        _, tok, act = per_gpu_imbalance_series(wp, n_gpus)
+        means[ph] = (float(tok.mean()), float(act.mean()))
+    if not means:
+        print("[charts] phase imbalance: no prefill/decode rows, skipping")
+        return
+    phs = list(means)
+    x = np.arange(len(phs))
+    fig, ax = plt.subplots(figsize=(7, 4))
+    ax.bar(x - 0.2, [means[p][0] for p in phs], 0.4, label="token-load", color="#1f77b4")
+    ax.bar(x + 0.2, [means[p][1] for p in phs], 0.4, label="activated-expert", color="#ff7f0e")
+    ax.axhline(1.0, ls=":", c="gray", lw=0.8)
+    ax.set_xticks(x)
+    ax.set_xticklabels(phs)
+    ax.set_ylabel(f"per-GPU imbalance (max/mean, D={n_gpus})")
+    ax.set_title("Prefill vs decode imbalance (token-load vs activated-expert)")
+    ax.legend(fontsize=8)
+    _save(fig, out, "q_phase_imbalance.png")
+
+
+def chart_topn_skew(w, out: Path):
+    """Placement-free generality verdict: top-N mass vs the matched balls-in-bins null."""
+    sk = topn_mass_skew(w, n=w.top_k, n_trials=20)
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.bar(["observed", "uniform null"],
+           [sk["observed_topn_mass"], sk["null_topn_mass"]],
+           color=["#2ca02c", "#999999"])
+    r = sk["ratio"]
+    ax.set_ylabel(f"top-{sk['n']} mass (of {sk['n_experts']} experts)")
+    ax.set_title(f"Routing skew vs matched null — ratio {r:.2f}× "
+                 f"({'≥2× skewed' if r and r >= 2 else 'near-uniform'})")
+    _save(fig, out, "q_topn_mass_skew.png")
+
+
+def chart_microbatch(mb_rows, rows, n_gpus: int, out: Path):
+    """M1 — per-micro-batch vs windowed imbalance (is a seconds-granularity cache enough?)."""
+    labels, win, mb = [], [], []
+    for ph in PHASES:
+        try:
+            wp = build_windowed(rows, phase=ph)
+        except ValueError:
+            continue
+        r = microbatch_vs_window(mb_rows, wp, n_gpus, phase=ph)
+        if r["microbatch_act_imbalance_mean"] is None:
+            continue
+        labels.append(ph)
+        win.append(r["window_act_imbalance"])
+        mb.append(r["microbatch_act_imbalance_mean"])
+    if not labels:
+        print("[charts] microbatch: no data, skipping")
+        return
+    x = np.arange(len(labels))
+    fig, ax = plt.subplots(figsize=(7, 4))
+    ax.bar(x - 0.2, win, 0.4, label="window (what cache sees)", color="#1f77b4")
+    ax.bar(x + 0.2, mb, 0.4, label="micro-batch (what all-to-all suffers)", color="#d62728")
+    ax.axhline(1.0, ls=":", c="gray", lw=0.8)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.set_ylabel(f"activated-expert imbalance (D={n_gpus})")
+    ax.set_title("Micro-batch vs window imbalance (cache timescale / Lina)")
+    ax.legend(fontsize=8)
+    _save(fig, out, "q_microbatch_vs_window.png")
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Render B2 Q1–Q7 charts.")
     ap.add_argument("--capture", help="expert.jsonl (file or dir)")
@@ -200,19 +297,27 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--sim", help="sim.json")
     ap.add_argument("--tier-cost", default=None)
     ap.add_argument("--migration", default=None)
+    ap.add_argument("--sim-gpus", type=int, default=8,
+                    help="simulated EP GPUs for per-GPU imbalance (match VLLM_B2_SIM_GPUS)")
     ap.add_argument("--out", required=True)
     args = ap.parse_args(argv)
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
 
-    w = segs = None
+    w = segs = rows = None
+    mb_rows: list[dict] = []
     if args.capture and Path(args.capture).exists():
         rows = read_jsonl(args.capture)
         segs = read_jsonl(args.segments) if args.segments and Path(args.segments).exists() else None
         if segs:
             assign_segments(rows, segs)
-        w = build_windowed(rows)
+        w = build_windowed(rows)  # filters out the mb summary rows internally
+        # micro-batch summaries live in sibling expert_mb.*.jsonl
+        cap = Path(args.capture)
+        cap_dir = cap if cap.is_dir() else cap.parent
+        for f in sorted(cap_dir.glob("expert_mb.*.jsonl")):
+            mb_rows += read_jsonl(f)
 
     sim = json.loads(Path(args.sim).read_text()) if args.sim and Path(args.sim).exists() else None
     mig = json.loads(Path(args.migration).read_text()) if args.migration and Path(args.migration).exists() else None
@@ -221,6 +326,11 @@ def main(argv: list[str] | None = None) -> int:
         chart_q1(w, segs, out)
         chart_q5(w, out)
         chart_q6(w, segs, out)
+        chart_hot_streak(w, out)
+        chart_topn_skew(w, out)
+        chart_phase_imbalance(rows, args.sim_gpus, out)
+        if mb_rows:
+            chart_microbatch(mb_rows, rows, args.sim_gpus, out)
     if sim is not None:
         chart_q2(sim, out)
         chart_q4(sim, out)
